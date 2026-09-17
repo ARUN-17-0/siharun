@@ -17,7 +17,7 @@ export interface DemoStep {
  * 7. Village successfully evacuated to high ground
  * 8. Fire peaks: Master node 1 becomes thermally stressed (82°C)
  * 9. Master node 1 initiates graceful handover
- * 10. Node 7 elected new Regional Master
+ * 10. Node 7 elected new Master Node
  * 11. Mesh reroutes: Nodes 2 and 3 route via multi-hop to Node 7
  * 12. Original Master Node 1 fails/powers down safely
  * 13. Network continues uninterrupted telemetry collection
@@ -28,7 +28,7 @@ export const COMPLETE_DEMO_STEPS: DemoStep[] = [
     stepIndex: 1,
     title: "1. Baseline Nominal State",
     durationMs: 7000,
-    description: "Mesh operating nominally. Node 1 is Regional Master aggregating forest data and routing to Village Gateway.",
+    description: "Mesh operating nominally. Node 1 is Master Node aggregating forest data and routing to Village Gateway.",
     action: 'SET_NORMAL'
   },
   {
@@ -84,7 +84,7 @@ export const COMPLETE_DEMO_STEPS: DemoStep[] = [
     stepIndex: 9,
     title: "9. Master Handover Packet Broadcast",
     durationMs: 9000,
-    description: "Node 1 evaluates candidate fitness scores and designates healthy, high-battery Node 7 as new Regional Master.",
+    description: "Node 1 evaluates candidate fitness scores and designates healthy, high-battery Node 7 as new Master Node.",
     action: 'TRIGGER_HANDOVER'
   },
   {

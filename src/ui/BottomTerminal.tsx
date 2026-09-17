@@ -2,24 +2,20 @@ import React, { useState } from 'react';
 import { 
   Terminal, 
   Crown, 
-  Search,
-  Binary
+  Search
 } from 'lucide-react';
-import { TelemetryLog, LoRaPacket, MasterElectionResult } from '../types';
-import { formatCompactHex } from '../network/LoRaPacket';
+import { TelemetryLog, MasterElectionResult } from '../types';
 
 interface BottomTerminalProps {
   logs: TelemetryLog[];
-  packets: LoRaPacket[];
   elections: MasterElectionResult[];
 }
 
 export const BottomTerminal: React.FC<BottomTerminalProps> = ({
   logs,
-  packets,
   elections
 }) => {
-  const [activeTab, setActiveTab] = useState<'EVENTS' | 'PACKETS' | 'ELECTIONS'>('EVENTS');
+  const [activeTab, setActiveTab] = useState<'EVENTS' | 'ELECTIONS'>('EVENTS');
   const [filterText, setFilterText] = useState('');
 
   const filteredLogs = logs.filter(l => 
@@ -58,20 +54,7 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
             <span>Telemetry & Disaster Logs ({logs.length})</span>
           </button>
 
-          {/* Tab 2: 443MHz LoRa Packets */}
-          <button
-            onClick={() => setActiveTab('PACKETS')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-black transition-colors ${
-              activeTab === 'PACKETS'
-                ? 'bg-cyan-900 text-white border border-cyan-400'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Binary className="w-3.5 h-3.5" />
-            <span>443MHz Multi-Hop Packets ({packets.length})</span>
-          </button>
-
-          {/* Tab 3: Master Election Audit */}
+          {/* Tab 2: Master Election Audit */}
           <button
             onClick={() => setActiveTab('ELECTIONS')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-black transition-colors ${
@@ -123,40 +106,7 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
           </div>
         )}
 
-        {/* TAB 2: LORA MULTI-HOP PACKETS */}
-        {activeTab === 'PACKETS' && (
-          <div className="space-y-1">
-            {packets.length === 0 ? (
-              <div className="text-slate-500 italic p-2">Awaiting LoRa packet transmissions...</div>
-            ) : (
-              packets.map(pkt => (
-                <div key={pkt.packetId} className="bg-slate-950 border border-slate-800 p-1.5 rounded flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-300 font-black">{pkt.packetId}</span>
-                    <span className={`px-1.5 py-0.2 rounded text-[9px] font-black ${
-                      pkt.packetType === 'CRITICAL_ALERT' ? 'bg-red-950 text-red-300 border border-red-500' :
-                      pkt.packetType === 'EARLY_WARNING' ? 'bg-yellow-950 text-yellow-300 border border-yellow-500' :
-                      pkt.packetType === 'MASTER_HANDOVER' ? 'bg-amber-950 text-amber-300 border border-amber-500' :
-                      'bg-slate-800 text-slate-200 border border-slate-700'
-                    }`}>
-                      {pkt.packetType}
-                    </span>
-                    <span className="text-slate-100 font-bold">{pkt.payloadSummary}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-slate-400 text-[10px]">
-                    <span className="text-cyan-400 font-mono font-semibold">{formatCompactHex(pkt)}</span>
-                    <span className="text-white">Hop: {pkt.hopCount}</span>
-                    <span className="text-white">Batt: {pkt.battery}%</span>
-                    <span className="text-white">Hlth: {pkt.nodeHealth}%</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: MASTER ELECTIONS */}
+        {/* TAB 2: MASTER ELECTIONS */}
         {activeTab === 'ELECTIONS' && (
           <div className="space-y-2">
             {elections.length === 0 ? (

@@ -27,7 +27,8 @@ import {
 } from '../ai/EdgeAIInferenceEngine';
 import { 
   computeMeshRouting, 
-  RoutingTableResult 
+  RoutingTableResult,
+  dijkstra
 } from '../routing/GraphMeshRouter';
 import { 
   checkMasterRequiresHandover, 
@@ -194,26 +195,21 @@ export class SimulationEngine {
     // 1. Advance staged disaster and village evacuation timeline
     if (this.scenario !== 'NORMAL' && !this.demoRunning) {
       this.disasterPhaseTimer += dtSec;
-      if (this.disasterPhase === 1 && this.disasterPhaseTimer >= 4.0) {
-        // Phase 1 -> Phase 2: Warning Dispatched
-        this.disasterPhase = 2;
-        this.evacuationState = 'WARNING_ISSUED';
-        this.phaseNarration = 'Phase 2: Early Warning Dispatched across LoRa mesh. Village sirens activated.';
-        this.addLog('EARLY_WARNING', 'WARN', 'Early Warning Broadcast', `Early warning packet reached Village Gateway. Emergency sirens active.`);
-      } else if (this.disasterPhase === 2 && this.disasterPhaseTimer >= 8.5) {
-        // Phase 2 -> Phase 3: Village Evacuation Active
+      if (this.disasterPhase === 2 && this.disasterPhaseTimer >= 4.0) {
+        // Warning was issued -> Village residents begin active evacuation
         this.disasterPhase = 3;
         this.evacuationState = 'EVACUATING';
-        this.phaseNarration = 'Phase 3: Village Evacuation in Progress. Transports moving to high ground.';
-        this.addLog('EARLY_WARNING', 'WARN', 'Evacuation Active', `Village evacuation underway. Personnel moving along safe route to high ground.`);
+        this.phaseNarration = 'Phase 3: Village Evacuation Active. Personnel and vehicles moving along dirt road to high ground.';
+        this.addLog('EARLY_WARNING', 'WARN', 'Evacuation Active', 'Village evacuation underway. Personnel moving along safe route to high ground.');
       } else if (this.disasterPhase === 3) {
-        this.evacuationProgress = Math.min(1.0, this.evacuationProgress + dtSec * 0.1);
-        if (this.evacuationProgress >= 1.0 && this.disasterPhaseTimer >= 18.0) {
+        // Evacuate village to safety
+        this.evacuationProgress = Math.min(1.0, this.evacuationProgress + dtSec * 0.12);
+        if (this.evacuationProgress >= 1.0) {
           // Phase 3 -> Phase 4: Village Safe, Disaster Hits Peak
           this.disasterPhase = 4;
           this.evacuationState = 'EVACUATED_SAFE';
           this.phaseNarration = 'Phase 4: Village Evacuated Safely. Peak disaster impact reached in sector.';
-          this.addLog('EARLY_WARNING', 'SUCCESS', 'Village Evacuation Complete', `All village personnel safely reached high ground safety perimeter.`);
+          this.addLog('EARLY_WARNING', 'SUCCESS', 'Village Evacuation Complete', 'All village personnel safely reached high ground safety perimeter.');
         }
       }
     }
@@ -304,8 +300,12 @@ export class SimulationEngine {
    * Dispatches periodic LoRa packets from nodes.
    * Round-robin guarantees that Nodes 2 and 3 and all sector nodes are continuously polled and collected!
    */
+  /**
+   * Dispatches periodic LoRa packets from nodes.
+   * Round-robin guarantees that Nodes 2 and 3 and all sector nodes are continuously polled and collected!
+   */
   private emitPeriodicMeshPackets() {
-    const aliveNodes = this.nodeStates.filter(n => n.isAlive && n.id !== this.currentMasterId);
+    const aliveNodes = this.nodeStates.filter(n => n.isAlive);
     if (aliveNodes.length === 0) return;
 
     // Select the next node in round-robin sequence
@@ -324,6 +324,40 @@ export class SimulationEngine {
 
     // Spawn first hop animation
     this.spawnPacketAnimation(node.id, nextHopId, packet);
+  }
+
+  /**
+   * Immediately dispatches an early warning or critical alert packet along the mesh
+   */
+  public dispatchEmergencyAlert(sourceNodeId: number, hazard: HazardType, severity: number) {
+    const node = this.nodeStates.find(n => n.id === sourceNodeId);
+    if (!node || !node.isAlive) return;
+
+    const route = node.routeToGateway;
+    if (!route || route.length < 2) return;
+
+    const nextHopId = route[1];
+    const isCritical = severity >= 70;
+    const packetType = isCritical ? 'CRITICAL_ALERT' : 'EARLY_WARNING';
+    
+    const packet = createAITelemetryPacket(node, nextHopId, this.currentMasterId, route);
+    packet.packetType = packetType;
+    packet.hazard = hazard;
+    packet.severity = severity;
+    packet.probability = severity;
+    packet.payloadSummary = `ALERT N${node.id}->N${nextHopId} [${packetType}] ${hazard} (${severity}%)`;
+    packet.remainingPath = route.slice(1);
+
+    this.packetLogs.unshift(packet);
+    this.addLog(
+      'EARLY_WARNING',
+      isCritical ? 'DANGER' : 'WARN',
+      `${hazard} Warning Dispatched: Node ${sourceNodeId}`,
+      `Sensor anomaly detected. Early warning LoRa packet transmitted along mesh via N${nextHopId} towards Gateway.`,
+      sourceNodeId
+    );
+
+    this.spawnPacketAnimation(sourceNodeId, nextHopId, packet);
   }
 
   /**
@@ -356,12 +390,11 @@ export class SimulationEngine {
   }
 
   /**
-   * Advances active packet animations and recursively forwards along remaining hops!
-   * This is what ensures that when Node 1 is replaced by Node 7, Nodes 2 and 3 hop
-   * through intermediate relays (N4, N5, N7) and are properly aggregated!
+   * Advances active packet animations and recursively forwards strictly hop-by-hop!
+   * Packets never skip nodes or jump straight across the terrain to the gateway.
    */
   private tickPacketAnimations(dtSec: number) {
-    const speed = 1.45;
+    const speed = 1.8;
     for (let i = this.activePacketAnimations.length - 1; i >= 0; i--) {
       const anim = this.activePacketAnimations[i];
       anim.progress += dtSec * speed;
@@ -373,49 +406,76 @@ export class SimulationEngine {
 
         this.activePacketAnimations.splice(i, 1);
 
-        if (arrivedNodeId === this.currentMasterId) {
-          // Reached Regional Master!
+        if (arrivedNodeId === 0) {
+          // Arrived at Village Gateway!
           this.addLog(
             'LORA_MESH',
             'SUCCESS',
-            `Master Aggregated Node ${anim.packet.nodeId}`,
-            `Regional Master N${this.currentMasterId} received telemetry from N${anim.packet.nodeId} (via ${anim.packet.hopCount + 1} hops). Relaying to Gateway.`,
-            anim.packet.nodeId
+            `Gateway Ingestion: Node ${anim.packet.nodeId}`,
+            `Village Gateway received [${anim.packet.packetType}] from N${anim.packet.nodeId} (total hops: ${anim.packet.hopCount + 1}).`
           );
-
-          // Master forwards directly to Gateway (Node 0)
-          if (this.gatewayOnline) {
-            const relayPacket: LoRaPacket = {
-              ...anim.packet,
-              sourceNodeId: this.currentMasterId,
-              destNodeId: 0,
-              hopCount: anim.packet.hopCount + 1,
-              payloadSummary: `MASTER N${this.currentMasterId} RELAY [${anim.packet.packetType}] N${anim.packet.nodeId}->GW`,
-              remainingPath: [0]
-            };
-            this.spawnPacketAnimation(this.currentMasterId, 0, relayPacket);
-          }
-        } else if (arrivedNodeId === 0) {
-          // Arrived at Village Gateway!
           if (anim.packet.packetType === 'EARLY_WARNING' || anim.packet.packetType === 'CRITICAL_ALERT') {
             if (this.evacuationState === 'STANDBY') {
               this.evacuationState = 'WARNING_ISSUED';
               this.disasterPhase = 2;
+              this.disasterPhaseTimer = 0;
+              this.phaseNarration = 'Phase 2: Warning received at Gateway. Village emergency sirens sounding!';
+              this.addLog('EARLY_WARNING', 'WARN', 'Emergency Sirens Triggered', 'Village sirens active. Evacuation order in effect.');
             }
           }
-        } else if (remaining.length > 1) {
-          // It reached an intermediate relay node! Forward along next hop!
-          const nextHopTarget = remaining[1];
-          const forwardedPacket: LoRaPacket = {
-            ...anim.packet,
-            sourceNodeId: arrivedNodeId,
-            destNodeId: nextHopTarget,
-            hopCount: anim.packet.hopCount + 1,
-            remainingPath: remaining.slice(1),
-            payloadSummary: `FWD N${arrivedNodeId}->N${nextHopTarget} (orig: N${anim.packet.nodeId})`
-          };
+        } else {
+          // Packet arrived at a sensor node (could be Master or intermediate relay)
+          const isMaster = (arrivedNodeId === this.currentMasterId);
 
-          this.spawnPacketAnimation(arrivedNodeId, nextHopTarget, forwardedPacket);
+          if (isMaster && anim.packet.nodeId !== this.currentMasterId) {
+            // Master aggregated telemetry from a subordinate node!
+            this.addLog(
+              'LORA_MESH',
+              'SUCCESS',
+              `Master Aggregated Node ${anim.packet.nodeId}`,
+              `Master Node N${this.currentMasterId} received & aggregated telemetry from N${anim.packet.nodeId} (${anim.packet.hopCount + 1} hops). Relaying towards Gateway.`,
+              anim.packet.nodeId
+            );
+          }
+
+          // Determine next target hop strictly along remainingPath:
+          let nextHopTarget: number | null = null;
+          let nextRemaining: number[] = [];
+
+          if (remaining.length > 0 && remaining[0] === arrivedNodeId) {
+            if (remaining.length > 1) {
+              nextHopTarget = remaining[1];
+              nextRemaining = remaining.slice(1);
+            }
+          } else if (remaining.length > 0) {
+            nextHopTarget = remaining[0];
+            nextRemaining = remaining.slice(1);
+          }
+
+          // If remaining hops exhausted at this node, lookup its Dijkstra route to Gateway:
+          if (nextHopTarget === null && arrivedNodeId !== 0) {
+            const currentNode = this.nodeStates.find(n => n.id === arrivedNodeId);
+            const routeToGw = currentNode?.routeToGateway || [];
+            if (routeToGw.length > 1) {
+              nextHopTarget = routeToGw[1];
+              nextRemaining = routeToGw.slice(1);
+            }
+          }
+
+          if (nextHopTarget !== null && this.gatewayOnline) {
+            const forwardedPacket: LoRaPacket = {
+              ...anim.packet,
+              sourceNodeId: arrivedNodeId,
+              destNodeId: nextHopTarget,
+              hopCount: anim.packet.hopCount + 1,
+              remainingPath: nextRemaining,
+              payloadSummary: isMaster 
+                ? `MASTER N${this.currentMasterId} RELAY [${anim.packet.packetType}] N${anim.packet.nodeId}->GW` 
+                : `FWD N${arrivedNodeId}->N${nextHopTarget} (orig: N${anim.packet.nodeId})`
+            };
+
+            this.spawnPacketAnimation(arrivedNodeId, nextHopTarget, forwardedPacket);
+          }
         }
       }
     }
@@ -440,9 +500,20 @@ export class SimulationEngine {
       `Current Master N${oldId} -> New Master N${newId}. Reason: ${reason}`
     );
 
-    const handoverPkt = createHandoverPacket(oldId, newId, reason, -1);
+    // Multi-hop route for the handover authority token across the mesh
+    let handoverRoute = [oldId, newId];
+    if (this.currentRouting?.adjacencyList) {
+      const dResult = dijkstra(oldId, newId, this.currentRouting.adjacencyList);
+      if (dResult && dResult.path && dResult.path.length > 1) {
+        handoverRoute = dResult.path;
+      }
+    }
+
+    const nextHop = handoverRoute[1];
+    const handoverPkt = createHandoverPacket(oldId, newId, reason, nextHop);
+    handoverPkt.remainingPath = handoverRoute.slice(1);
     this.packetLogs.unshift(handoverPkt);
-    this.spawnPacketAnimation(oldId, newId, handoverPkt);
+    this.spawnPacketAnimation(oldId, nextHop, handoverPkt);
 
     this.currentMasterId = newId;
 
@@ -458,7 +529,7 @@ export class SimulationEngine {
       'ROUTING',
       'SUCCESS',
       `Mesh Converged on Node ${newId}`,
-      `Node ${newId} is now Regional Master. Multi-hop routing from Nodes 2, 3 and all sectors redirected to N${newId}.`
+      `Node ${newId} is now Master Node. Multi-hop routing from Nodes 2, 3 and all sectors redirected to N${newId}.`
     );
   }
 
@@ -530,20 +601,23 @@ export class SimulationEngine {
       this.disasterPhase = 1;
       this.evacuationState = 'STANDBY';
       this.evacuationProgress = 0.0;
-      this.phaseNarration = 'Phase 1: Incipient thermal anomaly and smoke plume detected near Forest Ridge.';
-      this.addLog('EARLY_WARNING', 'WARN', 'Forest Fire Anomaly', 'Thermal sensor uptick in Forest Ridge. Early detection active.');
+      this.phaseNarration = 'Phase 1: Incipient thermal plume detected on mountain ridge. Dispatching early warning...';
+      this.addLog('EARLY_WARNING', 'WARN', 'Forest Fire Anomaly', 'Thermal sensor uptick on mountain ridge. Transmitting early warning packet.');
+      this.dispatchEmergencyAlert(1, 'FIRE', 65);
     } else if (scenario === 'FLOOD') {
       this.disasterPhase = 1;
       this.evacuationState = 'STANDBY';
       this.evacuationProgress = 0.0;
       this.phaseNarration = 'Phase 1: Heavy precipitation & catchment rise rate detected. River weir warning threshold active.';
-      this.addLog('EARLY_WARNING', 'WARN', 'Flood Catchment Surge', 'Ultrasonic river sensors detect rapid inflow. Early warning active.');
+      this.addLog('EARLY_WARNING', 'WARN', 'Flood Catchment Surge', 'Ultrasonic river sensors detect rapid inflow. Transmitting early warning packet.');
+      this.dispatchEmergencyAlert(4, 'FLOOD', 68);
     } else if (scenario === 'LANDSLIDE') {
       this.disasterPhase = 1;
       this.evacuationState = 'STANDBY';
       this.evacuationProgress = 0.0;
-      this.phaseNarration = 'Phase 1: Soil saturation & acoustic shear vibration detected on steep slope.';
-      this.addLog('EARLY_WARNING', 'WARN', 'Slope Instability', 'Geophone and tilt sensors detect shear displacement.');
+      this.phaseNarration = 'Phase 1: Mountain slope tilt & shear vibration detected near Node 1. Dispatching early warning...';
+      this.addLog('EARLY_WARNING', 'WARN', 'Slope Instability', 'Geophone and tilt sensors detect shear displacement near Node 1. Transmitting early warning packet.');
+      this.dispatchEmergencyAlert(1, 'LANDSLIDE', 72);
     } else if (scenario === 'MASTER_HANDOVER') {
       this.triggerGracefulHandover("Thermal stress & battery degradation drill");
     } else if (scenario === 'MASTER_FAILURE') {
@@ -569,7 +643,7 @@ export class SimulationEngine {
     this.activePacketAnimations = [];
     this.initNodes();
     this.recomputeTopology();
-    this.addLog('EARLY_WARNING', 'INFO', 'System Reset', 'Network reset to nominal conditions. Node 1 is Regional Master.');
+    this.addLog('EARLY_WARNING', 'INFO', 'System Reset', 'Network reset to nominal conditions. Node 1 is Master Node.');
     this.notify();
   }
 

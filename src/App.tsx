@@ -150,10 +150,9 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* 4. BOTTOM LOGS & PACKET TERMINAL */}
+      {/* 4. BOTTOM LOGS TERMINAL */}
       <BottomTerminal
         logs={eventLogs}
-        packets={packetLogs}
         elections={electionLogs}
       />
     </div>

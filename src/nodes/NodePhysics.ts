@@ -11,25 +11,43 @@ export interface NodePositionDefinition {
   description: string;
 }
 
+// Elevation mathematical function for the landscape
+// Mountain ridge on west/north, river valley in center, village plateau on east
+export function getTerrainHeight(x: number, z: number): number {
+  const mountainFactor = Math.max(0, (-x * 0.4 - z * 0.35 + 5) / 18);
+  const mountainHeight = Math.pow(mountainFactor, 1.6) * 8.5;
+
+  const valleyCenter = -12 + (z + 20) * 0.5;
+  const distToRiver = Math.abs(x - valleyCenter);
+  const riverTrough = Math.max(0, 1 - distToRiver / 8) * 3.2;
+
+  const undulation = Math.sin(x * 0.12) * Math.cos(z * 0.1) * 1.2;
+  const villagePlateau = (x > 10 && z > -5 && z < 25) ? 1.5 : 0;
+
+  const rawHeight = mountainHeight - riverTrough + undulation + villagePlateau;
+  return Math.max(0.2, rawHeight);
+}
+
 // Village Gateway location (Node 0)
 export const GATEWAY_POSITION: [number, number, number] = [28, 2.2, 14];
 export const GATEWAY_GPS = { lat: 30.1448, lng: 79.1285, alt: 1420 };
 
 // 10 Sensor Nodes strategically placed over procedural terrain zones
+// Node 1 is elevated high on a mountain pine tree (+3.2m above terrain surface)
 export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
   {
     id: 1,
-    name: "Ridge Sensor N1 (Initial Master)",
+    name: "Mountain Tree Post N1 (Master)",
     zone: "FOREST_UPPER",
-    position3D: [-26, 7.2, -22],
+    position3D: [-26, Math.round((getTerrainHeight(-26, -22) + 3.2) * 10) / 10, -22], // ~15.9m (Tree-mounted)
     gps: { lat: 30.1652, lng: 79.1021, alt: 1890 },
-    description: "High elevation observation post on forest ridge. Excellent LoRa line-of-sight."
+    description: "High mountain tree-mounted observation post on forest ridge. Line-of-sight LoRa backbone."
   },
   {
     id: 2,
     name: "North Canopy N2",
     zone: "FOREST_UPPER",
-    position3D: [-12, 6.0, -26],
+    position3D: [-12, Math.round((getTerrainHeight(-12, -26) + 0.3) * 10) / 10, -26], // ~8.5m
     gps: { lat: 30.1685, lng: 79.1143, alt: 1840 },
     description: "Dense pine canopy monitor for forest thermal & combustible smoke signatures."
   },
@@ -37,7 +55,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 3,
     name: "West Escarpment N3",
     zone: "FOREST_UPPER",
-    position3D: [-32, 5.6, -8],
+    position3D: [-32, Math.round((getTerrainHeight(-32, -8) + 0.3) * 10) / 10, -8], // ~11.4m
     gps: { lat: 30.1580, lng: 79.0965, alt: 1795 },
     description: "Western cliff boundary monitor for wildfires and gust winds."
   },
@@ -45,7 +63,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 4,
     name: "River Weir N4",
     zone: "RIVER_VALLEY",
-    position3D: [-14, 1.4, -4],
+    position3D: [-14, Math.round((getTerrainHeight(-14, -4) + 0.3) * 10) / 10, -4], // ~3.6m
     gps: { lat: 30.1520, lng: 79.1118, alt: 1460 },
     description: "Catchment basin and hydrologic telemetry station with ultrasonic water level sensor."
   },
@@ -53,7 +71,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 5,
     name: "Valley Culvert N5",
     zone: "RIVER_VALLEY",
-    position3D: [-2, 0.9, 8],
+    position3D: [-2, Math.round((getTerrainHeight(-2, 8) + 0.3) * 10) / 10, 8], // ~0.5m
     gps: { lat: 30.1462, lng: 79.1215, alt: 1435 },
     description: "Downstream gorge bottleneck for flash-flood surge detection."
   },
@@ -61,7 +79,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 6,
     name: "Slope Geophone N6",
     zone: "SLOPE_RIDGE",
-    position3D: [-20, 5.0, 16],
+    position3D: [-20, Math.round((getTerrainHeight(-20, 16) + 0.3) * 10) / 10, 16], // ~2.4m
     gps: { lat: 30.1408, lng: 79.1054, alt: 1680 },
     description: "Steep shale embankment with dual-axis tiltmeters and seismometers for landslide shear."
   },
@@ -69,7 +87,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 7,
     name: "Rock Terrace N7",
     zone: "SLOPE_RIDGE",
-    position3D: [-8, 4.4, 22],
+    position3D: [-8, Math.round((getTerrainHeight(-8, 22) + 0.3) * 10) / 10, 22], // ~0.9m
     gps: { lat: 30.1384, lng: 79.1170, alt: 1640 },
     description: "Solid bedrock terrace with high solar insolation. High battery capacity candidate."
   },
@@ -77,7 +95,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 8,
     name: "Forest Trail N8",
     zone: "VILLAGE_APPROACH",
-    position3D: [8, 2.2, -10],
+    position3D: [8, Math.round((getTerrainHeight(8, -10) + 0.3) * 10) / 10, -10], // ~2.0m
     gps: { lat: 30.1555, lng: 79.1302, alt: 1510 },
     description: "Main timber trail and agricultural transition point with particulate air monitor."
   },
@@ -85,7 +103,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 9,
     name: "Village Border N9",
     zone: "VILLAGE_APPROACH",
-    position3D: [15, 1.6, 6],
+    position3D: [15, Math.round((getTerrainHeight(15, 6) + 0.3) * 10) / 10, 6], // ~2.8m
     gps: { lat: 30.1478, lng: 79.1264, alt: 1445 },
     description: "Village entrance bridge relay node. Direct line-of-sight to Village Gateway."
   },
@@ -93,7 +111,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 10,
     name: "Hill Relay N10",
     zone: "VILLAGE_APPROACH",
-    position3D: [21, 2.8, -4],
+    position3D: [21, Math.round((getTerrainHeight(21, -4) + 0.3) * 10) / 10, -4], // ~2.4m
     gps: { lat: 30.1512, lng: 79.1330, alt: 1490 },
     description: "Commanding village hill relay node with dedicated redundant antenna."
   }

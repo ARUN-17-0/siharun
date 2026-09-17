@@ -65,7 +65,7 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
             {isMaster ? (
               <span className="inline-flex items-center gap-1 bg-amber-500 text-slate-950 border border-amber-400 px-2 py-0.5 rounded text-[10px] font-mono font-black shadow-md">
                 <Crown className="w-3 h-3" />
-                REGIONAL MASTER
+                MASTER NODE
               </span>
             ) : (
               <span className={`text-xs font-mono font-black ${

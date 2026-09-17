@@ -57,11 +57,49 @@ export const SensorNode3D: React.FC<SensorNode3DProps> = ({
         <meshBasicMaterial />
       </mesh>
 
-      {/* Ground Foundation / Anchor Post */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.12, 0.6, 8]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
-      </mesh>
+      {/* Tree Mounting for Node 1 (Mountain Pine Tree) vs Ground Anchor Post for others */}
+      {node.id === 1 ? (
+        <group>
+          {/* Mountain Pine Tree Trunk extending to mountain ground level */}
+          <mesh position={[0.42, -1.2, -0.15]} castShadow>
+            <cylinderGeometry args={[0.26, 0.38, 4.4, 8]} />
+            <meshStandardMaterial color="#3b2010" roughness={0.92} />
+          </mesh>
+          {/* Pine Tree Upper Foliage Cones */}
+          <group position={[0.42, 1.2, -0.15]}>
+            <mesh position={[0, 0.6, 0]} castShadow>
+              <coneGeometry args={[1.5, 2.0, 7]} />
+              <meshStandardMaterial color="#1a351a" roughness={0.85} />
+            </mesh>
+            <mesh position={[0, 1.6, 0]} castShadow>
+              <coneGeometry args={[1.1, 1.6, 7]} />
+              <meshStandardMaterial color="#244724" roughness={0.85} />
+            </mesh>
+            <mesh position={[0, 2.4, 0]} castShadow>
+              <coneGeometry args={[0.7, 1.2, 7]} />
+              <meshStandardMaterial color="#315c31" roughness={0.85} />
+            </mesh>
+          </group>
+          {/* Heavy-duty Galvanized Steel Tree-Mounting Clamp & Bracket */}
+          <group position={[0.2, 0.75, -0.08]}>
+            <mesh castShadow>
+              <boxGeometry args={[0.45, 0.12, 0.25]} />
+              <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.25} />
+            </mesh>
+            {/* Trunk clamp band */}
+            <mesh position={[0.22, 0, -0.05]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.3, 0.3, 0.08, 16, 1, true]} />
+              <meshStandardMaterial color="#475569" metalness={0.9} roughness={0.3} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        </group>
+      ) : (
+        /* Standard Ground Foundation / Anchor Post */
+        <mesh position={[0, 0.3, 0]} castShadow>
+          <cylinderGeometry args={[0.08, 0.12, 0.6, 8]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        </mesh>
+      )}
 
       {/* Weatherproof IP67 Sensor Box (Enclosure) */}
       <mesh position={[0, 0.75, 0]} castShadow receiveShadow>

@@ -2,7 +2,7 @@ import { NodeState, CandidateScore, MasterElectionResult } from '../types';
 import { calculateDistance3D, GATEWAY_POSITION, GATEWAY_MAX_RANGE } from '../nodes/NodePhysics';
 
 /**
- * Calculates a node's fitness score for assuming the Regional Master role.
+ * Calculates a node's fitness score for assuming the Master Node role.
  * Formula:
  * Fitness = 0.30 * Health + 0.25 * Battery + 0.20 * DegreeConnectivity + 0.15 * HazardSafety + 0.10 * GatewayProximity
  */

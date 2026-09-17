@@ -112,11 +112,11 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           </div>
         </div>
 
-        {/* Regional Master */}
+        {/* Master Node */}
         <div className="flex items-center gap-2 bg-amber-950/50 border-2 border-amber-500 px-3 py-1.5 rounded-md">
           <Crown className="w-4 h-4 text-amber-400" />
           <div>
-            <div className="text-[9px] text-amber-400 font-extrabold uppercase">Regional Master</div>
+            <div className="text-[9px] text-amber-400 font-extrabold uppercase">Master Node</div>
             <div className="text-amber-200 font-black flex items-center gap-1">
               Node {network.currentMasterId}
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />

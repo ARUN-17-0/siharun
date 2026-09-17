@@ -16,35 +16,53 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({
   const floodWaterRef = useRef<THREE.Mesh>(null);
   const debrisRef = useRef<THREE.Group>(null);
 
-  // Flame particles
+  // Flame particles with upward smoke plume
   const flameParticles = useMemo(() => {
     const list: { offset: [number, number, number]; scale: number; speed: number }[] = [];
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 36; i++) {
       list.push({
         offset: [
-          (Math.random() - 0.5) * 8.0,
-          Math.random() * 2.8,
-          (Math.random() - 0.5) * 8.0
+          (Math.random() - 0.5) * 6.5,
+          Math.random() * 2.2,
+          (Math.random() - 0.5) * 6.5
         ],
-        scale: 0.6 + Math.random() * 0.9,
-        speed: 1.5 + Math.random() * 2.0
+        scale: 0.8 + Math.random() * 0.9,
+        speed: 1.8 + Math.random() * 2.5
       });
     }
     return list;
   }, []);
 
-  // Landslide rock debris
-  const debrisRocks = useMemo(() => {
-    const list: { pos: [number, number, number]; scale: [number, number, number]; rot: [number, number, number] }[] = [];
+  // Smoke plume particles rising above the fire
+  const smokeParticles = useMemo(() => {
+    const list: { offset: [number, number, number]; scale: number; speed: number }[] = [];
     for (let i = 0; i < 20; i++) {
       list.push({
-        pos: [
-          -19 + (Math.random() - 0.5) * 6.5,
-          4.8 - Math.random() * 2.5,
-          16 + (Math.random() - 0.5) * 6.5
+        offset: [
+          (Math.random() - 0.5) * 5.0,
+          2.5 + Math.random() * 4.5,
+          (Math.random() - 0.5) * 5.0
         ],
-        scale: [0.35 + Math.random() * 0.4, 0.25 + Math.random() * 0.3, 0.35 + Math.random() * 0.4],
-        rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI]
+        scale: 1.2 + Math.random() * 1.5,
+        speed: 0.8 + Math.random() * 1.2
+      });
+    }
+    return list;
+  }, []);
+
+  // Landslide rock boulders tumbling down the mountain slope near Node 1
+  const debrisRocks = useMemo(() => {
+    const list: { offset: [number, number, number]; scale: [number, number, number]; rot: [number, number, number]; rollSpeed: number }[] = [];
+    for (let i = 0; i < 28; i++) {
+      list.push({
+        offset: [
+          (Math.random() - 0.5) * 7.0,
+          0.4 + Math.random() * 1.5,
+          (Math.random() - 0.5) * 7.0
+        ],
+        scale: [0.6 + Math.random() * 0.7, 0.45 + Math.random() * 0.5, 0.6 + Math.random() * 0.7],
+        rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI],
+        rollSpeed: 1.5 + Math.random() * 2.0
       });
     }
     return list;
@@ -53,14 +71,14 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
 
-    // 1. Fire animation
+    // 1. Fire animation on mountain ridge
     if (fireGroupRef.current && (scenario === 'FIRE' || scenario === 'COMPLETE_DEMO' || scenario === 'MASTER_HANDOVER')) {
-      const phaseMultiplier = disasterPhase >= 4 ? 1.0 : disasterPhase === 3 ? 0.7 : disasterPhase === 2 ? 0.45 : 0.25;
+      const phaseMultiplier = disasterPhase >= 4 ? 1.4 : disasterPhase === 3 ? 1.0 : disasterPhase === 2 ? 0.7 : 0.4;
       fireGroupRef.current.children.forEach((child, idx) => {
         const mesh = child as THREE.Mesh;
         const p = flameParticles[idx % flameParticles.length];
-        mesh.position.y = p.offset[1] + Math.sin(time * p.speed + idx) * 0.6;
-        mesh.scale.setScalar(p.scale * phaseMultiplier * (0.8 + Math.sin(time * 4.0 + idx) * 0.25));
+        mesh.position.y = p.offset[1] + Math.sin(time * p.speed + idx) * 0.8;
+        mesh.scale.setScalar(p.scale * phaseMultiplier * (0.85 + Math.sin(time * 5.0 + idx) * 0.25));
       });
     }
 
@@ -78,6 +96,18 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({
         delta * 0.9
       );
     }
+
+    // 3. Landslide tumbling boulders animation near Node 1
+    if (debrisRef.current && scenario === 'LANDSLIDE') {
+      const phaseMultiplier = disasterPhase >= 4 ? 1.5 : disasterPhase === 3 ? 1.1 : disasterPhase === 2 ? 0.7 : 0.35;
+      debrisRef.current.children.forEach((child, idx) => {
+        const mesh = child as THREE.Mesh;
+        const rock = debrisRocks[idx % debrisRocks.length];
+        mesh.rotation.x += delta * rock.rollSpeed * phaseMultiplier;
+        mesh.rotation.z += delta * (rock.rollSpeed * 0.7) * phaseMultiplier;
+        mesh.position.y = rock.offset[1] + Math.sin(time * 2.5 + idx) * 0.3 * phaseMultiplier;
+      });
+    }
   });
 
   const isFire = scenario === 'FIRE' || scenario === 'COMPLETE_DEMO' || scenario === 'MASTER_HANDOVER';
@@ -86,39 +116,62 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({
 
   return (
     <group>
-      {/* 1. FOREST FIRE */}
+      {/* 1. FOREST FIRE (Positioned on Mountain Ridge Surface at Y=11.8 near Node 1 & Node 2) */}
       {isFire && (
-        <group position={[-23, 7.2, -23]}>
+        <group position={[-22, 11.8, -23]}>
           <pointLight 
             color="#f97316" 
-            intensity={disasterPhase >= 4 ? 8.0 : disasterPhase === 3 ? 5.0 : 2.5} 
-            distance={24.0} 
+            intensity={disasterPhase >= 4 ? 14.0 : disasterPhase === 3 ? 9.0 : 4.5} 
+            distance={32.0} 
           />
           
+          {/* Flame Billows */}
           <group ref={fireGroupRef}>
             {flameParticles.map((p, idx) => (
               <mesh key={`flame-${idx}`} position={p.offset}>
-                <dodecahedronGeometry args={[0.55, 0]} />
+                <dodecahedronGeometry args={[0.75, 0]} />
                 <meshStandardMaterial 
-                  color={idx % 2 === 0 ? "#ef4444" : "#f59e0b"} 
-                  emissive={idx % 2 === 0 ? "#b91c1c" : "#d97706"} 
-                  emissiveIntensity={disasterPhase >= 4 ? 3.5 : 2.2} 
-                  roughness={0.4} 
+                  color={idx % 3 === 0 ? "#ef4444" : idx % 3 === 1 ? "#f59e0b" : "#ea580c"} 
+                  emissive={idx % 3 === 0 ? "#b91c1c" : idx % 3 === 1 ? "#d97706" : "#c2410c"} 
+                  emissiveIntensity={disasterPhase >= 4 ? 4.2 : 2.8} 
+                  roughness={0.3} 
                   transparent 
-                  opacity={0.88} 
+                  opacity={0.9} 
                 />
               </mesh>
             ))}
           </group>
 
+          {/* Billowing Smoke Column */}
+          <group>
+            {smokeParticles.map((s, idx) => (
+              <mesh key={`smoke-${idx}`} position={s.offset}>
+                <sphereGeometry args={[s.scale, 8, 8]} />
+                <meshStandardMaterial 
+                  color="#262626" 
+                  roughness={0.95} 
+                  transparent 
+                  opacity={disasterPhase >= 3 ? 0.65 : 0.35} 
+                  depthWrite={false}
+                />
+              </mesh>
+            ))}
+          </group>
+
+          {/* Ground Ash Burn Decal */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+            <circleGeometry args={[6.5, 32]} />
+            <meshStandardMaterial color="#171717" roughness={0.95} transparent opacity={0.8} />
+          </mesh>
+
           {/* Warning Perimeter Ring */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.15, 0]}>
             <ringGeometry args={[8.5, 9.2, 32]} />
             <meshBasicMaterial 
               color={disasterPhase >= 4 ? "#ef4444" : "#f59e0b"} 
               side={THREE.DoubleSide} 
               transparent 
-              opacity={0.8} 
+              opacity={0.85} 
             />
           </mesh>
         </group>
@@ -151,20 +204,37 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({
         </group>
       )}
 
-      {/* 3. LANDSLIDE */}
+      {/* 3. LANDSLIDE (Positioned on Mountain Slope Surface at Y=11.8 right next to Node 1) */}
       {isLandslide && (
-        <group position={[-19, 4.8, 16]}>
+        <group position={[-24, 11.8, -20]}>
+          <pointLight 
+            color="#d97706" 
+            intensity={disasterPhase >= 4 ? 7.0 : 3.5} 
+            distance={20.0} 
+          />
+
+          {/* Tumbling Jagged Rockfall Boulders */}
           <group ref={debrisRef}>
             {debrisRocks.map((r, idx) => (
-              <mesh key={`rock-${idx}`} position={r.pos} rotation={r.rot} scale={r.scale} castShadow>
-                <dodecahedronGeometry args={[0.8, 0]} />
-                <meshStandardMaterial color="#78350f" roughness={0.95} />
+              <mesh key={`rock-${idx}`} position={r.offset} rotation={r.rot} scale={r.scale} castShadow>
+                <dodecahedronGeometry args={[0.85, 0]} />
+                <meshStandardMaterial 
+                  color={idx % 2 === 0 ? "#573010" : "#3d220a"} 
+                  roughness={0.95} 
+                />
               </mesh>
             ))}
           </group>
 
-          <mesh rotation={[-Math.PI / 2, 0, 0.4]} position={[0, 0.2, 0]}>
-            <ringGeometry args={[6.5, 7.2, 32]} />
+          {/* Mud & Shear Ground Scar */}
+          <mesh rotation={[-Math.PI / 2, 0, 0.35]} position={[0, 0.08, 0]}>
+            <circleGeometry args={[5.5, 32]} />
+            <meshStandardMaterial color="#45260f" roughness={0.95} transparent opacity={0.85} />
+          </mesh>
+
+          {/* Warning Perimeter Ring */}
+          <mesh rotation={[-Math.PI / 2, 0, 0.3]} position={[0, 0.15, 0]}>
+            <ringGeometry args={[6.8, 7.5, 32]} />
             <meshBasicMaterial 
               color={disasterPhase >= 4 ? "#ef4444" : "#f59e0b"} 
               side={THREE.DoubleSide} 

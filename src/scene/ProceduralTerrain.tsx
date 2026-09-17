@@ -1,27 +1,7 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
+import { getTerrainHeight } from '../nodes/NodePhysics';
 
-// Elevation mathematical function for the landscape
-// Elevated mountains on west/north, river valley in center, village plateau on east
-export function getTerrainHeight(x: number, z: number): number {
-  // Mountain ridge on west/north
-  const mountainFactor = Math.max(0, (-x * 0.4 - z * 0.35 + 5) / 18);
-  const mountainHeight = Math.pow(mountainFactor, 1.6) * 8.5;
-
-  // River valley trough (curves from x: -16, z: -35 down to x: 5, z: 25)
-  const valleyCenter = -12 + (z + 20) * 0.5;
-  const distToRiver = Math.abs(x - valleyCenter);
-  const riverTrough = Math.max(0, 1 - distToRiver / 8) * 3.2;
-
-  // Gentle hills
-  const undulation = Math.sin(x * 0.12) * Math.cos(z * 0.1) * 1.2;
-
-  // Village plateau on east side
-  const villagePlateau = (x > 10 && z > -5 && z < 25) ? 1.5 : 0;
-
-  const rawHeight = mountainHeight - riverTrough + undulation + villagePlateau;
-  return Math.max(0.2, rawHeight);
-}
 
 // Procedural Tree Component (Pine tree or deciduous)
 interface TreeProps {

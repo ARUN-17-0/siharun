@@ -72,7 +72,7 @@ function calculateEdgeCost(
 /**
  * Dijkstra's shortest-path algorithm over the dynamic wireless mesh graph.
  */
-function dijkstra(
+export function dijkstra(
   startId: number,
   targetId: number,
   adjacency: Record<number, { neighborId: number; cost: number; quality: number }[]>
@@ -154,7 +154,7 @@ function dijkstra(
 
 /**
  * Computes the global mesh routing tables for all alive nodes.
- * Connects regular nodes -> Regional Master -> Village Gateway (Node 0).
+ * Connects regular nodes -> Master Node -> Village Gateway (Node 0).
  */
 export function computeMeshRouting(
   nodeStates: NodeState[],

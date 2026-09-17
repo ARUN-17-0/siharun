@@ -100,7 +100,7 @@ export function createElectionWinnerPacket(
     ttl: 5,
     battery: 96,
     nodeHealth: 95,
-    payloadSummary: `ELECTION WINNER: N${newMasterId} assumed Regional Master (Term ${termNumber})`
+    payloadSummary: `ELECTION WINNER: N${newMasterId} assumed Master Node (Term ${termNumber})`
   };
 }
 

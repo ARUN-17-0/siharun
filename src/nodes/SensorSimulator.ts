@@ -53,14 +53,15 @@ export function createInitialNodeHealth(nodeId: number): NodeHealth {
 }
 
 // Epicenter targets for the 3 Core Disaster Scenarios
+// Accurate surface elevations on the mountain terrain
 export const HAZARD_EPICENTERS: Record<ScenarioType, [number, number, number]> = {
   NORMAL: [0, 0, 0],
-  FIRE: [-24, 7.0, -23],           // Near Node 1 & Node 2 in Forest Upper Ridge
+  FIRE: [-22, 11.5, -23],          // Mountain ridge near Node 1 & Node 2
   FLOOD: [-10, 1.2, 0],            // In River Valley near Node 4 & Node 5
-  LANDSLIDE: [-19, 4.8, 16],       // On steep slope near Node 6
-  MASTER_FAILURE: [-26, 7.2, -22], // Node 1
-  MASTER_HANDOVER: [-26, 7.2, -22],// Node 1
-  COMPLETE_DEMO: [-24, 7.0, -23]   // Starts with Fire
+  LANDSLIDE: [-24, 11.8, -20],      // On steep mountain slope right next to Node 1
+  MASTER_FAILURE: [-26, 15.9, -22], // Node 1
+  MASTER_HANDOVER: [-26, 15.9, -22],// Node 1
+  COMPLETE_DEMO: [-22, 11.5, -23]   // Starts with Fire
 };
 
 /**
@@ -178,7 +179,7 @@ export function updateNodeSensors(
       }
     }
   } else if (scenario === 'LANDSLIDE') {
-    if (def.zone === 'SLOPE_RIDGE' || proximity > 0.05) {
+    if (def.zone === 'SLOPE_RIDGE' || proximity > 0.05 || def.id === 1) {
       if (disasterPhase === 1) {
         targetRainfall = 40.0;
         targetSoilMoisture = 75.0;
