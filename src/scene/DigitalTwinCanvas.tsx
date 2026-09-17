@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
-import { NodeState, ActivePacketAnimation, ScenarioType } from '../types';
+import { NodeState, ActivePacketAnimation, ScenarioType, EvacuationState } from '../types';
 import { ProceduralTerrain } from './ProceduralTerrain';
 import { SensorNode3D } from './SensorNode3D';
 import { VillageGateway3D } from './VillageGateway3D';
@@ -20,6 +20,9 @@ interface DigitalTwinCanvasProps {
   onSelectNode: (nodeId: number) => void;
   packetAnimations: ActivePacketAnimation[];
   scenario: ScenarioType;
+  evacuationState?: EvacuationState;
+  evacuationProgress?: number;
+  disasterPhase?: number;
   cameraPreset?: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'RESET';
 }
 
@@ -31,6 +34,9 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
   onSelectNode,
   packetAnimations,
   scenario,
+  evacuationState = 'STANDBY',
+  evacuationProgress = 0,
+  disasterPhase = 1,
   cameraPreset
 }) => {
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -109,7 +115,8 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
         {/* Village Comm Gateway (Node 0) */}
         <VillageGateway3D 
           online={gatewayOnline} 
-          activePacketCount={packetAnimations.length} 
+          evacuationState={evacuationState}
+          evacuationProgress={evacuationProgress}
         />
 
         {/* 10 Autonomous Sensor Nodes */}
@@ -134,7 +141,10 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
         <PacketStream3D animations={packetAnimations} />
 
         {/* Disaster Event 3D Overlays */}
-        <HazardOverlays3D scenario={scenario} />
+        <HazardOverlays3D 
+          scenario={scenario} 
+          disasterPhase={disasterPhase}
+        />
       </Canvas>
 
       {/* 3D Viewport Controls HUD overlay */}

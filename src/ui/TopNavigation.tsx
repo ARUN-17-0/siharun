@@ -1,13 +1,12 @@
 import React from 'react';
 import { 
   Radio, 
-  Activity, 
-  ShieldCheck, 
-  AlertTriangle, 
   Cpu, 
   TowerControl, 
-  Layers,
-  Crown
+  Crown,
+  ShieldCheck,
+  AlertTriangle,
+  Users
 } from 'lucide-react';
 import { NetworkState } from '../types';
 
@@ -25,90 +24,124 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
   const getScenarioBadge = () => {
     switch (network.scenario) {
       case 'NORMAL':
-        return <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-semibold">BASELINE NOMINAL</span>;
+        return <span className="bg-emerald-950 text-emerald-300 border-2 border-emerald-500 px-2.5 py-0.5 rounded text-xs font-black tracking-wide">BASELINE NOMINAL</span>;
       case 'FIRE':
-        return <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded text-xs font-semibold animate-pulse">FOREST FIRE ACTIVE</span>;
+        return <span className="bg-red-950 text-red-300 border-2 border-red-500 px-2.5 py-0.5 rounded text-xs font-black tracking-wide animate-pulse">FOREST FIRE ACTIVE</span>;
       case 'FLOOD':
-        return <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded text-xs font-semibold animate-pulse">FLASH FLOOD ACTIVE</span>;
+        return <span className="bg-blue-950 text-cyan-300 border-2 border-cyan-400 px-2.5 py-0.5 rounded text-xs font-black tracking-wide animate-pulse">FLASH FLOOD ACTIVE</span>;
       case 'LANDSLIDE':
-        return <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-xs font-semibold animate-pulse">LANDSLIDE RISK</span>;
-      case 'POLLUTION':
-        return <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded text-xs font-semibold animate-pulse">AIR INVERSION</span>;
+        return <span className="bg-amber-950 text-amber-300 border-2 border-amber-500 px-2.5 py-0.5 rounded text-xs font-black tracking-wide animate-pulse">LANDSLIDE ACTIVE</span>;
       case 'COMPLETE_DEMO':
-        return <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-xs font-semibold animate-pulse">COMPLETE DEMO ACTIVE</span>;
+        return <span className="bg-purple-950 text-purple-200 border-2 border-purple-400 px-2.5 py-0.5 rounded text-xs font-black tracking-wide animate-pulse">COMPLETE DEMO ACTIVE</span>;
       default:
-        return <span className="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-xs">{network.scenario}</span>;
+        return <span className="bg-slate-800 text-slate-200 px-2 py-0.5 rounded text-xs font-bold">{network.scenario}</span>;
+    }
+  };
+
+  const getEvacuationBadge = () => {
+    switch (network.evacuationState) {
+      case 'STANDBY':
+        return (
+          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 px-2.5 py-1 rounded text-xs font-mono text-slate-300">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Village: <strong className="text-emerald-400">Secure</strong></span>
+          </div>
+        );
+      case 'WARNING_ISSUED':
+        return (
+          <div className="flex items-center gap-1.5 bg-amber-950/80 border-2 border-amber-500 px-2.5 py-1 rounded text-xs font-mono text-amber-300 animate-pulse">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <span>Siren Active: <strong className="text-amber-200">Warning Dispatched</strong></span>
+          </div>
+        );
+      case 'EVACUATING':
+        return (
+          <div className="flex items-center gap-1.5 bg-red-950/90 border-2 border-red-500 px-2.5 py-1 rounded text-xs font-mono text-red-200 animate-pulse">
+            <Users className="w-3.5 h-3.5 text-red-400 animate-bounce" />
+            <span>Evacuating: <strong className="text-yellow-300">{(network.evacuationProgress * 100).toFixed(0)}%</strong></span>
+          </div>
+        );
+      case 'EVACUATED_SAFE':
+        return (
+          <div className="flex items-center gap-1.5 bg-emerald-950/90 border-2 border-emerald-400 px-2.5 py-1 rounded text-xs font-mono text-emerald-300">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Village Status: <strong className="text-emerald-200">Evacuated to High Ground</strong></span>
+          </div>
+        );
     }
   };
 
   return (
-    <header className="h-16 bg-[#0c121e]/95 backdrop-blur-md border-b border-slate-800/80 px-4 flex items-center justify-between z-20 shadow-md">
+    <header className="h-16 bg-[#070b14] border-b-2 border-slate-700/80 px-4 flex items-center justify-between z-20 shadow-xl">
       {/* Title & SIH Badge */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/40">
-          <Radio className="w-5 h-5 text-white animate-pulse" />
+        <div className="w-10 h-10 rounded-lg bg-cyan-700 border-2 border-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-900/40">
+          <Radio className="w-5 h-5 text-white" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="bg-cyan-950 text-cyan-300 border border-cyan-700/50 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded uppercase">
+            <span className="bg-cyan-950 text-cyan-300 border border-cyan-500 text-[10px] font-mono font-black px-1.5 py-0.2 rounded uppercase">
               SIH 2026
             </span>
-            <h1 className="text-sm font-bold text-slate-100 tracking-tight">
-              Resilient AI Environmental Monitoring Network
+            <h1 className="text-sm font-black text-white tracking-wide font-mono">
+              Resilient Environmental Monitoring Network
             </h1>
             {getScenarioBadge()}
           </div>
-          <p className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-            <span>ESP32-S3 Edge AI</span>
-            <span>•</span>
-            <span>443MHz LoRa Dynamic Mesh</span>
-            <span>•</span>
-            <span>Self-Healing Master Election</span>
+          <p className="text-[11px] text-slate-300 font-mono flex items-center gap-2 mt-0.5">
+            <span className="text-cyan-400 font-bold">10 ESP32-S3 Nodes</span>
+            <span>|</span>
+            <span className="text-emerald-400 font-bold">443MHz LoRa Mesh</span>
+            <span>|</span>
+            <span className="text-slate-300">{network.phaseNarration}</span>
           </p>
         </div>
       </div>
 
       {/* Network Telemetry Badges */}
-      <div className="flex items-center gap-4 text-xs font-mono">
+      <div className="flex items-center gap-3 text-xs font-mono">
+        {/* Village Evacuation Monitor */}
+        {getEvacuationBadge()}
+
         {/* Active Nodes */}
-        <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-md">
+        <div className="flex items-center gap-2 bg-slate-900 border-2 border-slate-700 px-3 py-1.5 rounded-md">
           <Cpu className="w-4 h-4 text-cyan-400" />
           <div>
-            <div className="text-[10px] text-slate-500 uppercase">Mesh Nodes</div>
-            <div className="text-slate-200 font-bold">{network.totalActiveNodes} / 10 Active</div>
+            <div className="text-[9px] text-slate-400 font-bold uppercase">Mesh Nodes</div>
+            <div className="text-white font-black">{network.totalActiveNodes} / 10 Online</div>
           </div>
         </div>
 
-        {/* Current Master */}
-        <div className="flex items-center gap-2 bg-amber-950/30 border border-amber-500/40 px-3 py-1.5 rounded-md shadow-sm">
+        {/* Regional Master */}
+        <div className="flex items-center gap-2 bg-amber-950/50 border-2 border-amber-500 px-3 py-1.5 rounded-md">
           <Crown className="w-4 h-4 text-amber-400" />
           <div>
-            <div className="text-[10px] text-amber-500/80 uppercase font-semibold">Regional Master</div>
-            <div className="text-amber-300 font-bold flex items-center gap-1">
+            <div className="text-[9px] text-amber-400 font-extrabold uppercase">Regional Master</div>
+            <div className="text-amber-200 font-black flex items-center gap-1">
               Node {network.currentMasterId}
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             </div>
           </div>
         </div>
 
         {/* Gateway Status */}
-        <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-md">
+        <div className="flex items-center gap-2 bg-slate-900 border-2 border-slate-700 px-3 py-1.5 rounded-md">
           <TowerControl className="w-4 h-4 text-emerald-400" />
           <div>
-            <div className="text-[10px] text-slate-500 uppercase">Village Gateway</div>
-            <div className="text-emerald-400 font-bold flex items-center gap-1">
-              {network.gatewayOnline ? 'ONLINE' : 'OFFLINE'}
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <div className="text-[9px] text-slate-400 font-bold uppercase">Village Gateway</div>
+            <div className="text-emerald-400 font-black flex items-center gap-1">
+              {network.gatewayOnline ? 'CONNECTED' : 'OFFLINE'}
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
             </div>
           </div>
         </div>
 
         {/* Camera Preset Buttons */}
-        <div className="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-md text-[11px]">
+        <div className="flex items-center bg-slate-900 border-2 border-slate-700 p-0.5 rounded-md text-[11px]">
           <button
             onClick={() => onCameraPreset('ISOMETRIC')}
             className={`px-2.5 py-1 rounded transition-colors ${
-              activeCamera === 'ISOMETRIC' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeCamera === 'ISOMETRIC' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
             }`}
           >
             Isometric
@@ -116,7 +149,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           <button
             onClick={() => onCameraPreset('TOP_DOWN')}
             className={`px-2.5 py-1 rounded transition-colors ${
-              activeCamera === 'TOP_DOWN' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeCamera === 'TOP_DOWN' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
             }`}
           >
             Top-Down
@@ -124,7 +157,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           <button
             onClick={() => onCameraPreset('GATEWAY_POV')}
             className={`px-2.5 py-1 rounded transition-colors ${
-              activeCamera === 'GATEWAY_POV' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
+              activeCamera === 'GATEWAY_POV' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
             }`}
           >
             Gateway POV

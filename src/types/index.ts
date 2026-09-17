@@ -1,32 +1,33 @@
 export type RiskState = 'NORMAL' | 'WATCH' | 'WARNING' | 'CRITICAL';
 
-export type HazardType = 'NONE' | 'FIRE' | 'FLOOD' | 'LANDSLIDE' | 'POLLUTION';
+export type HazardType = 'NONE' | 'FIRE' | 'FLOOD' | 'LANDSLIDE';
 
 export type NodeStatus = 'HEALTHY' | 'DEGRADED' | 'CRITICAL' | 'FAILED';
+
+export type EvacuationState = 'STANDBY' | 'WARNING_ISSUED' | 'EVACUATING' | 'EVACUATED_SAFE';
 
 export type ScenarioType = 
   | 'NORMAL' 
   | 'FIRE' 
   | 'FLOOD' 
   | 'LANDSLIDE' 
-  | 'POLLUTION' 
   | 'MASTER_FAILURE' 
   | 'MASTER_HANDOVER' 
   | 'COMPLETE_DEMO';
 
 export type PacketType = 
   | 'HEARTBEAT' 
-  | 'AI_TELEMETRY' 
+  | 'TELEMETRY' 
+  | 'EARLY_WARNING' 
   | 'CRITICAL_ALERT' 
   | 'MASTER_HANDOVER' 
   | 'ELECTION_VOTE' 
   | 'ELECTION_WINNER';
 
 export interface CameraEvidence {
-  fireConfidence: number;      // 0.0 - 1.0 (Edge CNN flame/smoke feature)
-  floodConfidence: number;     // 0.0 - 1.0 (Edge CNN water accumulation feature)
-  debrisConfidence: number;    // 0.0 - 1.0 (Edge CNN mud/rock movement feature)
-  smogConfidence: number;      // 0.0 - 1.0 (Edge CNN particulate haze feature)
+  fireConfidence: number;      // 0.0 - 1.0 (Flame & smoke visual feature)
+  floodConfidence: number;     // 0.0 - 1.0 (Water level overflow feature)
+  debrisConfidence: number;    // 0.0 - 1.0 (Slope shear & debris feature)
   timestamp: number;
 }
 
@@ -64,7 +65,6 @@ export interface AIResult {
   fireProbability: number;        // 0 - 100%
   floodProbability: number;       // 0 - 100%
   landslideProbability: number;   // 0 - 100%
-  pollutionProbability: number;   // 0 - 100%
   severity: number;               // 0 - 100%
   primaryHazard: HazardType;
   status: RiskState;
@@ -106,6 +106,7 @@ export interface LoRaPacket {
   battery: number;
   nodeHealth: number;
   payloadSummary?: string;
+  remainingPath?: number[];       // Trajectory hops [nextHop, ..., master, 0]
 }
 
 export interface NodeState {
@@ -138,8 +139,12 @@ export interface NetworkState {
   activeHazard: HazardType;
   scenario: ScenarioType;
   isSimulating: boolean;
-  simulationSpeed: number;        // 1x, 2x, 5x
+  simulationSpeed: number;
   routes: Record<number, number[]>; // NodeId -> full path to gateway
+  evacuationState: EvacuationState;
+  evacuationProgress: number;     // 0.0 to 1.0
+  disasterPhase: number;          // 1 (Detect) -> 2 (Warn) -> 3 (Evacuate) -> 4 (Impact Peak)
+  phaseNarration: string;
 }
 
 export interface CandidateScore {
@@ -165,7 +170,7 @@ export interface MasterElectionResult {
 export interface TelemetryLog {
   id: string;
   timestamp: number;
-  category: 'AI' | 'LORA' | 'ROUTING' | 'MASTER' | 'SCENARIO';
+  category: 'EDGE_COMPUTE' | 'LORA_MESH' | 'ROUTING' | 'MASTER' | 'EARLY_WARNING';
   level: 'INFO' | 'SUCCESS' | 'WARN' | 'DANGER';
   title: string;
   message: string;

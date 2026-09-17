@@ -130,6 +130,9 @@ export const App: React.FC = () => {
             onSelectNode={(id) => setSelectedNodeId(id > 0 ? id : null)}
             packetAnimations={packetAnimations}
             scenario={network.scenario}
+            evacuationState={network.evacuationState}
+            evacuationProgress={network.evacuationProgress}
+            disasterPhase={network.disasterPhase}
             cameraPreset={cameraPreset}
           />
 

@@ -3,124 +3,123 @@ export interface DemoStep {
   title: string;
   durationMs: number;
   description: string;
-  action: 'SET_NORMAL' | 'START_FIRE' | 'ESCALATE_FIRE' | 'TRIGGER_HANDOVER' | 'KILL_OLD_MASTER' | 'CONVERGE_REROUTE' | 'VERIFY_GATEWAY' | 'COMPLETE';
+  action: 'SET_NORMAL' | 'DETECT_ANOMALY' | 'DISPATCH_WARNING' | 'EVACUATE_VILLAGE' | 'PEAK_DISASTER' | 'TRIGGER_HANDOVER' | 'KILL_OLD_MASTER' | 'CONVERGE_REROUTE' | 'VERIFY_GATEWAY' | 'COMPLETE';
 }
 
 /**
- * 14-Step Complete Demo sequence as required by the specification:
- * 1. Normal network
- * 2. Fire begins
- * 3. Node AI probabilities increase
- * 4. Neighbouring nodes detect the same hazard
- * 5. Regional risk increases
- * 6. Critical alert travels through mesh
- * 7. Master node becomes unsafe
- * 8. Master announces handover
- * 9. Best healthy node becomes master
- * 10. Network reroutes
- * 11. Village receives alert
- * 12. Original master fails
- * 13. Network continues operating
- * 14. Show final system status
- * Total duration: ~135 seconds (2.2 minutes), with fast-forward/pause controls.
+ * 14-Step Complete Demo sequence:
+ * 1. Normal network baseline
+ * 2. Wildfire incipient thermal anomaly
+ * 3. Sensor nodes 1, 2, 3 detect heat rise rate
+ * 4. Multi-sensor corroboration flags early hazard
+ * 5. Early warning packet dispatched through mesh
+ * 6. Village Gateway receives warning & triggers evacuation
+ * 7. Village successfully evacuated to high ground
+ * 8. Fire peaks: Master node 1 becomes thermally stressed (82°C)
+ * 9. Master node 1 initiates graceful handover
+ * 10. Node 7 elected new Regional Master
+ * 11. Mesh reroutes: Nodes 2 and 3 route via multi-hop to Node 7
+ * 12. Original Master Node 1 fails/powers down safely
+ * 13. Network continues uninterrupted telemetry collection
+ * 14. Final resilient system audit
  */
 export const COMPLETE_DEMO_STEPS: DemoStep[] = [
   {
     stepIndex: 1,
-    title: "1. Nominal Mesh State",
-    durationMs: 8000,
+    title: "1. Baseline Nominal State",
+    durationMs: 7000,
     description: "Mesh operating nominally. Node 1 is Regional Master aggregating forest data and routing to Village Gateway.",
     action: 'SET_NORMAL'
   },
   {
     stepIndex: 2,
-    title: "2. Fire Ignition in Upper Ridge",
-    durationMs: 9000,
-    description: "Thermal signatures and combustible smoke particles begin rising near Node 1 & Node 2 in Forest Upper Ridge.",
-    action: 'START_FIRE'
+    title: "2. Forest Fire Incipient Thermal Plume",
+    durationMs: 8000,
+    description: "Combustible gas and temperature rise rate detected near Forest Upper Ridge sensors (Nodes 1, 2, 3).",
+    action: 'DETECT_ANOMALY'
   },
   {
     stepIndex: 3,
-    title: "3. Edge AI Threat Probability Spikes",
-    durationMs: 9000,
-    description: "ESP32-S3 Edge AI detects temp rise rate + low humidity + camera flame vectors. Fire probability escalates past 65%.",
-    action: 'ESCALATE_FIRE'
+    title: "3. Edge AI Early Threat Detection",
+    durationMs: 8000,
+    description: "ESP32-S3 detects steep delta-T/delta-t + optical flame vector. Early Warning status triggered before peak fire.",
+    action: 'DISPATCH_WARNING'
   },
   {
     stepIndex: 4,
-    title: "4. Multi-Node Corroboration",
-    durationMs: 9000,
-    description: "Adjacent nodes N2 & N3 corroborate high PM2.5 and smoke density, confirming localized multi-sensor wildfire event.",
-    action: 'ESCALATE_FIRE'
+    title: "4. Multi-Node Mesh Corroboration",
+    durationMs: 8000,
+    description: "Adjacent nodes N2 & N3 corroborate high PM2.5 and smoke density, verifying localized wildfire event.",
+    action: 'DISPATCH_WARNING'
   },
   {
     stepIndex: 5,
-    title: "5. Regional Risk Escalates to CRITICAL",
+    title: "5. Early Warning Broadcast to Gateway",
     durationMs: 9000,
-    description: "Edge AI hysteresis transitions state from WARNING to CRITICAL. Overall threat severity reaches 92%.",
-    action: 'ESCALATE_FIRE'
+    description: "Compact 32-byte LoRa packets travel across multi-hop links to Village Gateway, warning of incoming danger.",
+    action: 'DISPATCH_WARNING'
   },
   {
     stepIndex: 6,
-    title: "6. LoRa Critical Packets Propagate",
+    title: "6. Village Emergency Siren & Evacuation Starts",
     durationMs: 10000,
-    description: "Compact 32-byte LoRa packets broadcast across 443MHz sub-GHz channels, traversing multi-hop mesh links.",
-    action: 'ESCALATE_FIRE'
+    description: "Village Gateway sounds emergency sirens BEFORE fire peak. Evacuation transports start moving toward high ground.",
+    action: 'EVACUATE_VILLAGE'
   },
   {
     stepIndex: 7,
-    title: "7. Current Master (N1) Becomes Unsafe",
-    durationMs: 10000,
-    description: "Intense heat engulfs Node 1 (temp > 75°C, health drops to 23%). Master triggers preemptive graceful handover protocol.",
-    action: 'TRIGGER_HANDOVER'
+    title: "7. Village Successfully Evacuated",
+    durationMs: 9000,
+    description: "All personnel and livestock safely evacuated to designated high-ground safety perimeter.",
+    action: 'EVACUATE_VILLAGE'
   },
   {
     stepIndex: 8,
-    title: "8. Master Broadcasts Handover Packet",
-    durationMs: 9000,
-    description: "Node 1 computes candidate scores and broadcasts MASTER_HANDOVER packet designating top-scored healthy replacement.",
+    title: "8. Fire Reaches Peak: Master (N1) Overheats",
+    durationMs: 10000,
+    description: "Fire engulfs upper ridge (82°C). Master Node 1 health drops to 23%. Preemptive handover protocol triggered.",
     action: 'TRIGGER_HANDOVER'
   },
   {
     stepIndex: 9,
-    title: "9. Best Healthy Node Assumes Master",
-    durationMs: 10000,
-    description: "New Master assumes regional command based on superior battery, high health, RF degree, and clear line-of-sight.",
-    action: 'CONVERGE_REROUTE'
+    title: "9. Master Handover Packet Broadcast",
+    durationMs: 9000,
+    description: "Node 1 evaluates candidate fitness scores and designates healthy, high-battery Node 7 as new Regional Master.",
+    action: 'TRIGGER_HANDOVER'
   },
   {
     stepIndex: 10,
-    title: "10. Autonomous Mesh Rerouting",
-    durationMs: 10000,
-    description: "Dijkstra routing tables rebuild dynamically. Sensor nodes bypass failing Node 1 and converge on the new Master.",
+    title: "10. Node 7 Assumes Regional Command",
+    durationMs: 9000,
+    description: "Node 7 assumes Master role with 96% battery, excellent RF connectivity, and clear line-of-sight to the Gateway.",
     action: 'CONVERGE_REROUTE'
   },
   {
     stepIndex: 11,
-    title: "11. Village Gateway Receives Hazard Alert",
+    title: "11. Multi-Hop Rerouting: N2 & N3 Route to N7",
     durationMs: 10000,
-    description: "Village Gateway receives aggregated early-warning telemetry via the new Master. Evacuation siren triggered.",
-    action: 'VERIFY_GATEWAY'
+    description: "Dijkstra routing updates. Isolated nodes N2 & N3 forward data through intermediate relays (N4, N5) to new Master N7.",
+    action: 'CONVERGE_REROUTE'
   },
   {
     stepIndex: 12,
-    title: "12. Original Master (N1) Shuts Down",
-    durationMs: 10000,
-    description: "Node 1 suffers terminal thermal failure and powers off. Zero disruption to ongoing mesh telemetry!",
+    title: "12. Original Master (N1) Powered Off",
+    durationMs: 9000,
+    description: "Node 1 is de-energized post-handover. Zero disruption to ongoing mesh telemetry collection!",
     action: 'KILL_OLD_MASTER'
   },
   {
     stepIndex: 13,
-    title: "13. Resilient Continuous Operation",
-    durationMs: 11000,
-    description: "Self-healing topology maintains continuous stream of environmental telemetry with 0% packet loss to the village.",
-    action: 'CONVERGE_REROUTE'
+    title: "13. Continued Resilient Telemetry Flow",
+    durationMs: 10000,
+    description: "All active sector sensors continue streaming environmental telemetry to the Village Gateway via Master N7.",
+    action: 'VERIFY_GATEWAY'
   },
   {
     stepIndex: 14,
-    title: "14. Final Resilient Network Audit",
-    durationMs: 12000,
-    description: "Demonstration complete! Autonomous failover, edge AI inference, and 443MHz LoRa mesh verified successfully.",
+    title: "14. System Audit Complete & Verified",
+    durationMs: 11000,
+    description: "Early detection, proactive evacuation, graceful master failover, and multi-hop resilience verified successfully.",
     action: 'COMPLETE'
   }
 ];

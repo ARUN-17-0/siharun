@@ -5,42 +5,45 @@ import { ScenarioType } from '../types';
 
 interface HazardOverlays3DProps {
   scenario: ScenarioType;
+  disasterPhase?: number;
 }
 
-export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({ scenario }) => {
+export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({ 
+  scenario,
+  disasterPhase = 1 
+}) => {
   const fireGroupRef = useRef<THREE.Group>(null);
   const floodWaterRef = useRef<THREE.Mesh>(null);
-  const smogRef = useRef<THREE.Mesh>(null);
   const debrisRef = useRef<THREE.Group>(null);
 
-  // Generate randomized particle seeds for fire flames and smoke
+  // Flame particles
   const flameParticles = useMemo(() => {
     const list: { offset: [number, number, number]; scale: number; speed: number }[] = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 28; i++) {
       list.push({
         offset: [
           (Math.random() - 0.5) * 8.0,
-          Math.random() * 2.5,
+          Math.random() * 2.8,
           (Math.random() - 0.5) * 8.0
         ],
-        scale: 0.6 + Math.random() * 0.8,
+        scale: 0.6 + Math.random() * 0.9,
         speed: 1.5 + Math.random() * 2.0
       });
     }
     return list;
   }, []);
 
-  // Generate landslide debris rocks
+  // Landslide rock debris
   const debrisRocks = useMemo(() => {
     const list: { pos: [number, number, number]; scale: [number, number, number]; rot: [number, number, number] }[] = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 20; i++) {
       list.push({
         pos: [
-          -20 + (Math.random() - 0.5) * 6.0,
-          4.8 - Math.random() * 2.2,
-          16 + (Math.random() - 0.5) * 6.0
+          -19 + (Math.random() - 0.5) * 6.5,
+          4.8 - Math.random() * 2.5,
+          16 + (Math.random() - 0.5) * 6.5
         ],
-        scale: [0.3 + Math.random() * 0.4, 0.2 + Math.random() * 0.3, 0.3 + Math.random() * 0.4],
+        scale: [0.35 + Math.random() * 0.4, 0.25 + Math.random() * 0.3, 0.35 + Math.random() * 0.4],
         rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI]
       });
     }
@@ -50,92 +53,105 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({ scenario }) 
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
 
-    // Fire flame flicker animation
+    // 1. Fire animation
     if (fireGroupRef.current && (scenario === 'FIRE' || scenario === 'COMPLETE_DEMO' || scenario === 'MASTER_HANDOVER')) {
+      const phaseMultiplier = disasterPhase >= 4 ? 1.0 : disasterPhase === 3 ? 0.7 : disasterPhase === 2 ? 0.45 : 0.25;
       fireGroupRef.current.children.forEach((child, idx) => {
         const mesh = child as THREE.Mesh;
         const p = flameParticles[idx % flameParticles.length];
         mesh.position.y = p.offset[1] + Math.sin(time * p.speed + idx) * 0.6;
-        mesh.scale.setScalar(p.scale * (0.8 + Math.sin(time * 4.0 + idx) * 0.25));
+        mesh.scale.setScalar(p.scale * phaseMultiplier * (0.8 + Math.sin(time * 4.0 + idx) * 0.25));
       });
     }
 
-    // Flood water surge rise
+    // 2. Flood water plane: Only reaches high overflow in Phase 4 (after village evacuates!)
     if (floodWaterRef.current && scenario === 'FLOOD') {
-      const targetY = 2.4; // Elevated flood water plane
-      floodWaterRef.current.position.y = THREE.MathUtils.lerp(floodWaterRef.current.position.y, targetY, delta * 0.8);
-    }
+      let targetWaterY = 0.95;
+      if (disasterPhase === 1) targetWaterY = 1.35;
+      else if (disasterPhase === 2) targetWaterY = 1.95;
+      else if (disasterPhase === 3) targetWaterY = 2.65; // High river, evacuation in progress
+      else if (disasterPhase >= 4) targetWaterY = 3.65;  // Peak overflow inundation!
 
-    // Smog dome rotation
-    if (smogRef.current && scenario === 'POLLUTION') {
-      smogRef.current.rotation.y += delta * 0.05;
+      floodWaterRef.current.position.y = THREE.MathUtils.lerp(
+        floodWaterRef.current.position.y,
+        targetWaterY,
+        delta * 0.9
+      );
     }
   });
 
   const isFire = scenario === 'FIRE' || scenario === 'COMPLETE_DEMO' || scenario === 'MASTER_HANDOVER';
   const isFlood = scenario === 'FLOOD';
   const isLandslide = scenario === 'LANDSLIDE';
-  const isPollution = scenario === 'POLLUTION';
 
   return (
     <group>
-      {/* 1. FOREST FIRE HAZARD: Flames and rising smoke in Upper Ridge near Node 1 & 2 */}
+      {/* 1. FOREST FIRE */}
       {isFire && (
         <group position={[-23, 7.2, -23]}>
-          {/* Central Fire Danger Glow */}
-          <pointLight color="#f97316" intensity={6.0} distance={22.0} />
+          <pointLight 
+            color="#f97316" 
+            intensity={disasterPhase >= 4 ? 8.0 : disasterPhase === 3 ? 5.0 : 2.5} 
+            distance={24.0} 
+          />
           
           <group ref={fireGroupRef}>
             {flameParticles.map((p, idx) => (
               <mesh key={`flame-${idx}`} position={p.offset}>
-                <dodecahedronGeometry args={[0.5, 0]} />
+                <dodecahedronGeometry args={[0.55, 0]} />
                 <meshStandardMaterial 
                   color={idx % 2 === 0 ? "#ef4444" : "#f59e0b"} 
                   emissive={idx % 2 === 0 ? "#b91c1c" : "#d97706"} 
-                  emissiveIntensity={2.8} 
+                  emissiveIntensity={disasterPhase >= 4 ? 3.5 : 2.2} 
                   roughness={0.4} 
                   transparent 
-                  opacity={0.85} 
+                  opacity={0.88} 
                 />
               </mesh>
             ))}
           </group>
 
-          {/* Warning Perimeter Ring on Terrain */}
+          {/* Warning Perimeter Ring */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
             <ringGeometry args={[8.5, 9.2, 32]} />
-            <meshBasicMaterial color="#ef4444" side={THREE.DoubleSide} transparent opacity={0.6} />
+            <meshBasicMaterial 
+              color={disasterPhase >= 4 ? "#ef4444" : "#f59e0b"} 
+              side={THREE.DoubleSide} 
+              transparent 
+              opacity={0.8} 
+            />
           </mesh>
         </group>
       )}
 
-      {/* 2. FLASH FLOOD HAZARD: Rising Turbid River Water */}
+      {/* 2. FLASH FLOOD */}
       {isFlood && (
         <group>
+          {/* Main River Flood Surge Plane */}
           <mesh 
             ref={floodWaterRef} 
             position={[-6, 1.2, 2]} 
             rotation={[-Math.PI / 2, 0, 0.45]}
           >
-            <planeGeometry args={[22, 78]} />
+            <planeGeometry args={[26, 80]} />
             <meshStandardMaterial 
-              color="#0369a1" 
-              roughness={0.1} 
-              metalness={0.3} 
+              color={disasterPhase >= 4 ? "#0369a1" : "#0284c7"} 
+              roughness={0.08} 
+              metalness={0.4} 
               transparent 
-              opacity={0.88} 
+              opacity={disasterPhase >= 4 ? 0.92 : 0.85} 
             />
           </mesh>
 
-          {/* Danger zone markers at river culverts */}
-          <mesh position={[-14, 2.5, -4]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[3.5, 4.0, 32]} />
-            <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.7} />
+          {/* Catchment Basin Warning Ring */}
+          <mesh position={[-14, 2.2, -4]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[4.2, 4.8, 32]} />
+            <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.8} />
           </mesh>
         </group>
       )}
 
-      {/* 3. LANDSLIDE HAZARD: Slope Instability, Rockfall Debris & Slip Perimeter */}
+      {/* 3. LANDSLIDE */}
       {isLandslide && (
         <group position={[-19, 4.8, 16]}>
           <group ref={debrisRef}>
@@ -147,31 +163,14 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({ scenario }) 
             ))}
           </group>
 
-          {/* Shear Tension Crack Indicator */}
           <mesh rotation={[-Math.PI / 2, 0, 0.4]} position={[0, 0.2, 0]}>
             <ringGeometry args={[6.5, 7.2, 32]} />
-            <meshBasicMaterial color="#f59e0b" side={THREE.DoubleSide} transparent opacity={0.75} />
-          </mesh>
-        </group>
-      )}
-
-      {/* 4. AIR POLLUTION HAZARD: Atmospheric Particulate Inversion Smog Dome */}
-      {isPollution && (
-        <group position={[12, 2.0, 0]}>
-          <mesh ref={smogRef}>
-            <sphereGeometry args={[16, 24, 16]} />
-            <meshStandardMaterial 
-              color="#713f12" 
-              transparent 
-              opacity={0.35} 
-              roughness={1.0} 
+            <meshBasicMaterial 
+              color={disasterPhase >= 4 ? "#ef4444" : "#f59e0b"} 
               side={THREE.DoubleSide} 
-              depthWrite={false} 
+              transparent 
+              opacity={0.85} 
             />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
-            <ringGeometry args={[14.5, 15.5, 32]} />
-            <meshBasicMaterial color="#a16207" side={THREE.DoubleSide} transparent opacity={0.6} />
           </mesh>
         </group>
       )}

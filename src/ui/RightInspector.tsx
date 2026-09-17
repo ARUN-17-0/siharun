@@ -8,14 +8,11 @@ import {
   Activity, 
   Camera, 
   Radio, 
-  ShieldAlert, 
-  Cpu, 
   Crown, 
   Layers, 
-  CheckCircle2, 
-  AlertTriangle,
   Zap,
-  Clock
+  Flame,
+  Mountain
 } from 'lucide-react';
 import { NodeState } from '../types';
 
@@ -30,13 +27,13 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
 }) => {
   if (!selectedNode) {
     return (
-      <aside className="w-96 h-full bg-[#0c121e]/90 backdrop-blur-md border-l border-slate-800/80 p-6 flex flex-col items-center justify-center text-center select-none z-10">
-        <Cpu className="w-12 h-12 text-slate-700 mb-3 animate-pulse" />
-        <h3 className="text-sm font-bold text-slate-300 font-mono uppercase">
+      <aside className="w-96 h-full bg-[#080d18] border-l-2 border-slate-700 p-6 flex flex-col items-center justify-center text-center select-none z-10">
+        <Radio className="w-12 h-12 text-slate-600 mb-3 animate-pulse" />
+        <h3 className="text-sm font-black text-white font-mono uppercase">
           No Node Selected
         </h3>
-        <p className="text-xs text-slate-500 mt-1 max-w-[240px]">
-          Click any sensor node in the 3D digital-twin viewport or the fleet list to inspect its ESP32-S3 sensor matrix and Edge AI telemetry.
+        <p className="text-xs text-slate-400 mt-1 max-w-[240px]">
+          Select any sensor node in the 3D digital-twin viewport or the fleet list to inspect its ESP32-S3 sensor suite and edge computing outputs.
         </p>
       </aside>
     );
@@ -45,350 +42,330 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
   const { sensorData, temporalFeatures, aiResult, health } = selectedNode;
   const isMaster = selectedNode.id === currentMasterId;
 
-  const getStatusColor = () => {
-    if (!selectedNode.isAlive) return 'text-slate-500';
-    switch (aiResult.status) {
-      case 'CRITICAL': return 'text-red-400';
-      case 'WARNING': return 'text-amber-400';
-      case 'WATCH': return 'text-cyan-400';
-      case 'NORMAL': return 'text-emerald-400';
-    }
-  };
-
   return (
-    <aside className="w-96 h-full bg-[#0c121e]/90 backdrop-blur-md border-l border-slate-800/80 flex flex-col z-10 select-none overflow-hidden shadow-xl">
+    <aside className="w-96 h-full bg-[#080d18] border-l-2 border-slate-700 flex flex-col z-10 select-none overflow-hidden shadow-2xl">
       {/* Node Header */}
-      <div className="p-3.5 border-b border-slate-800 bg-slate-900/50">
+      <div className="p-3.5 border-b-2 border-slate-700 bg-slate-900">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-md bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 flex items-center justify-center font-mono font-black text-sm">
+            <span className="w-8 h-8 rounded bg-cyan-900 border-2 border-cyan-400 text-cyan-200 flex items-center justify-center font-mono font-black text-sm">
               N{selectedNode.id}
             </span>
             <div>
-              <h3 className="text-xs font-bold text-slate-100 font-mono leading-tight">
+              <h3 className="text-xs font-black text-white font-mono leading-tight">
                 {selectedNode.name}
               </h3>
-              <p className="text-[10px] text-slate-400 font-mono">
-                Zone: <span className="text-cyan-300">{selectedNode.zone.replace('_', ' ')}</span>
+              <p className="text-[10px] text-slate-300 font-mono">
+                Zone: <strong className="text-cyan-400">{selectedNode.zone.replace('_', ' ')}</strong>
               </p>
             </div>
           </div>
 
-          {/* Master Badge / Status */}
           <div className="text-right">
             {isMaster ? (
-              <span className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/50 px-2 py-0.5 rounded text-[10px] font-mono font-black">
-                <Crown className="w-3 h-3 text-amber-400" />
+              <span className="inline-flex items-center gap-1 bg-amber-500 text-slate-950 border border-amber-400 px-2 py-0.5 rounded text-[10px] font-mono font-black shadow-md">
+                <Crown className="w-3 h-3" />
                 REGIONAL MASTER
               </span>
             ) : (
-              <span className={`text-[11px] font-mono font-bold ${getStatusColor()}`}>
-                {aiResult.status}
+              <span className={`text-xs font-mono font-black ${
+                aiResult.status === 'CRITICAL' ? 'text-red-400' :
+                aiResult.status === 'WARNING' ? 'text-amber-400' :
+                aiResult.status === 'WATCH' ? 'text-cyan-400' : 'text-emerald-400'
+              }`}>
+                STATUS: {aiResult.status}
               </span>
             )}
           </div>
         </div>
 
-        {/* GPS Coordinates & Altitude */}
-        <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+        {/* GPS Coordinates */}
+        <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono text-slate-300 font-semibold">
           <span>Lat: {sensorData.gps.lat.toFixed(4)}°N</span>
           <span>Lng: {sensorData.gps.lng.toFixed(4)}°E</span>
-          <span className="text-slate-300 font-semibold">{sensorData.gps.alt}m MSL</span>
+          <span className="text-white bg-slate-800 px-1.5 py-0.2 rounded border border-slate-700">{sensorData.gps.alt}m MSL</span>
         </div>
       </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3.5 text-xs font-mono">
         
-        {/* SECTION 1: EDGE AI INFERENCE ENGINE */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5">
+        {/* 1. EDGE CLASSIFIER HEADS (3 HAZARDS ONLY) */}
+        <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-[11px] uppercase">
-              <Zap className="w-3.5 h-3.5" />
-              <span>ESP32-S3 Edge AI Output</span>
+            <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase">
+              <Zap className="w-4 h-4 text-yellow-400" />
+              <span>ESP32-S3 Threat Assessment</span>
             </div>
-            <span className="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.2 rounded">
-              {aiResult.inferenceTimeMs}ms
+            <span className="text-[10px] text-cyan-300 bg-cyan-950 border border-cyan-700 px-2 py-0.2 rounded font-bold">
+              {aiResult.inferenceTimeMs}ms latency
             </span>
           </div>
 
-          {/* Multi-Head Hazard Probabilities */}
-          <div className="space-y-1.5">
-            {/* Fire */}
+          <div className="space-y-2">
+            {/* 1. Fire */}
             <div>
-              <div className="flex justify-between text-[10px] mb-0.5">
-                <span className="text-slate-300">Fire Risk Probability</span>
-                <span className={aiResult.fireProbability > 60 ? 'text-red-400 font-bold' : 'text-slate-300'}>
+              <div className="flex justify-between text-[10px] mb-0.5 font-bold">
+                <span className="text-slate-200 flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-red-400" />
+                  Forest Fire Risk
+                </span>
+                <span className={aiResult.fireProbability > 50 ? 'text-red-400 font-black' : 'text-white'}>
                   {aiResult.fireProbability}%
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-950 rounded border border-slate-800 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all" 
+                  className="h-full bg-red-500 transition-all" 
                   style={{ width: `${aiResult.fireProbability}%` }} 
                 />
               </div>
             </div>
 
-            {/* Flood */}
+            {/* 2. Flood */}
             <div>
-              <div className="flex justify-between text-[10px] mb-0.5">
-                <span className="text-slate-300">Flood Risk Probability</span>
-                <span className={aiResult.floodProbability > 60 ? 'text-cyan-400 font-bold' : 'text-slate-300'}>
+              <div className="flex justify-between text-[10px] mb-0.5 font-bold">
+                <span className="text-slate-200 flex items-center gap-1">
+                  <Droplets className="w-3 h-3 text-cyan-400" />
+                  Flash Flood Risk
+                </span>
+                <span className={aiResult.floodProbability > 50 ? 'text-cyan-400 font-black' : 'text-white'}>
                   {aiResult.floodProbability}%
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-950 rounded border border-slate-800 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all" 
+                  className="h-full bg-cyan-400 transition-all" 
                   style={{ width: `${aiResult.floodProbability}%` }} 
                 />
               </div>
             </div>
 
-            {/* Landslide */}
+            {/* 3. Landslide */}
             <div>
-              <div className="flex justify-between text-[10px] mb-0.5">
-                <span className="text-slate-300">Landslide Risk Probability</span>
-                <span className={aiResult.landslideProbability > 60 ? 'text-amber-400 font-bold' : 'text-slate-300'}>
+              <div className="flex justify-between text-[10px] mb-0.5 font-bold">
+                <span className="text-slate-200 flex items-center gap-1">
+                  <Mountain className="w-3 h-3 text-amber-400" />
+                  Landslide / Shear Risk
+                </span>
+                <span className={aiResult.landslideProbability > 50 ? 'text-amber-400 font-black' : 'text-white'}>
                   {aiResult.landslideProbability}%
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-950 rounded border border-slate-800 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-yellow-500 to-amber-600 transition-all" 
+                  className="h-full bg-amber-400 transition-all" 
                   style={{ width: `${aiResult.landslideProbability}%` }} 
-                />
-              </div>
-            </div>
-
-            {/* Pollution */}
-            <div>
-              <div className="flex justify-between text-[10px] mb-0.5">
-                <span className="text-slate-300">Pollution Risk Probability</span>
-                <span className={aiResult.pollutionProbability > 60 ? 'text-yellow-400 font-bold' : 'text-slate-300'}>
-                  {aiResult.pollutionProbability}%
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-yellow-500 transition-all" 
-                  style={{ width: `${aiResult.pollutionProbability}%` }} 
                 />
               </div>
             </div>
           </div>
 
-          {/* Severity & Hysteresis Status */}
-          <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+          {/* Aggregate Severity & Hysteresis Lock */}
+          <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-bold">
             <div>
-              <span className="text-slate-400">Total Severity: </span>
-              <strong className={aiResult.severity > 70 ? 'text-red-400' : 'text-slate-200'}>
+              <span className="text-slate-400">Total Threat Severity: </span>
+              <strong className={aiResult.severity > 65 ? 'text-red-400 text-sm' : 'text-white text-sm'}>
                 {aiResult.severity}%
               </strong>
             </div>
-            <div>
-              <span className="text-slate-400">Confidence: </span>
-              <strong className="text-cyan-300">{aiResult.confidence}%</strong>
-            </div>
             {aiResult.hysteresisLocked && (
-              <span className="text-[9px] bg-slate-800 text-cyan-300 px-1.5 py-0.2 rounded border border-cyan-800">
-                Hysteresis Active
+              <span className="bg-slate-800 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500 text-[9px]">
+                Hysteresis Filtered
               </span>
             )}
           </div>
         </div>
 
-        {/* SECTION 2: 11 SIMULATED HARDWARE SENSORS */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5">
-          <div className="flex items-center gap-1.5 text-slate-200 font-bold text-[11px] uppercase mb-2">
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            <span>ESP32-S3 Hardware Sensors</span>
+        {/* 2. ESP32-S3 SENSOR TELEMETRY SUITE */}
+        <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase mb-2">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span>Hardware Sensor Streams</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-[10px]">
             {/* Temperature */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
                 <span>Temperature</span>
-                <Thermometer className="w-3 h-3 text-red-400" />
+                <Thermometer className="w-3.5 h-3.5 text-red-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.temperature}°C
               </div>
-              <div className="text-[9px] text-slate-500">
-                Δ {temporalFeatures.rateOfChange.temperatureRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.temperatureRate}°C/min
+              <div className="text-[9px] text-slate-400">
+                Rate: {temporalFeatures.rateOfChange.temperatureRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.temperatureRate}°C/min
               </div>
             </div>
 
             {/* Humidity */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
-                <span>Humidity</span>
-                <Droplets className="w-3 h-3 text-blue-400" />
+                <span>Rel Humidity</span>
+                <Droplets className="w-3.5 h-3.5 text-blue-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.humidity}% RH
               </div>
-              <div className="text-[9px] text-slate-500">
+              <div className="text-[9px] text-slate-400">
                 Capacitive Sensor
               </div>
             </div>
 
-            {/* Smoke / Combustible Gas */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            {/* Smoke / Gas */}
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
-                <span>Smoke / Gas</span>
-                <Wind className="w-3 h-3 text-amber-400" />
+                <span>Combustible Gas</span>
+                <Wind className="w-3.5 h-3.5 text-amber-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.smokeGas} ppm
               </div>
-              <div className="text-[9px] text-slate-500">
-                MQ-2 Gas Chamber
+              <div className="text-[9px] text-slate-400">
+                MQ-2 Sensor Array
               </div>
             </div>
 
-            {/* Particulate PM2.5 / PM10 */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            {/* Particulates PM2.5 / PM10 */}
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
-                <span>Particulates</span>
-                <Activity className="w-3 h-3 text-yellow-400" />
+                <span>PM2.5 / PM10</span>
+                <Activity className="w-3.5 h-3.5 text-yellow-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.pm25} / {sensorData.pm10}
               </div>
-              <div className="text-[9px] text-slate-500">
-                PM2.5 / PM10 (µg/m³)
+              <div className="text-[9px] text-slate-400">
+                µg/m³ Laser Scatter
               </div>
             </div>
 
             {/* Rainfall Rate */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
                 <span>Precipitation</span>
-                <CloudRain className="w-3 h-3 text-cyan-400" />
+                <CloudRain className="w-3.5 h-3.5 text-cyan-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.rainfall} mm/h
               </div>
-              <div className="text-[9px] text-slate-500">
+              <div className="text-[9px] text-slate-400">
                 Cumul: {temporalFeatures.cumulativeRainfall}mm
               </div>
             </div>
 
             {/* Soil Moisture */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
                 <span>Soil Moisture</span>
-                <Droplets className="w-3 h-3 text-emerald-400" />
+                <Droplets className="w-3.5 h-3.5 text-emerald-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.soilMoisture}%
               </div>
-              <div className="text-[9px] text-slate-500">
-                Volumetric Saturation
+              <div className="text-[9px] text-slate-400">
+                TDR Probe
               </div>
             </div>
 
             {/* Water Level */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
                 <span>Water Level</span>
-                <Activity className="w-3 h-3 text-blue-400" />
+                <Activity className="w-3.5 h-3.5 text-blue-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
+              <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.waterLevel} m
               </div>
-              <div className="text-[9px] text-slate-500">
-                Δ {temporalFeatures.rateOfChange.waterLevelRiseRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.waterLevelRiseRate} m/min
+              <div className="text-[9px] text-slate-400">
+                Rise: {temporalFeatures.rateOfChange.waterLevelRiseRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.waterLevelRiseRate}m/min
               </div>
             </div>
 
             {/* Tilt / Inclination */}
-            <div className="bg-slate-950/60 p-1.5 rounded border border-slate-800/60">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
-                <span>Tilt Angle</span>
-                <Compass className="w-3 h-3 text-amber-400" />
+                <span>Tilt & Vibration</span>
+                <Compass className="w-3.5 h-3.5 text-amber-400" />
               </div>
-              <div className="text-slate-200 font-bold mt-0.5 text-xs">
-                {sensorData.tilt}° (Vib {sensorData.vibration}g)
+              <div className="text-white font-black text-sm mt-0.5">
+                {sensorData.tilt}° / {sensorData.vibration}g
               </div>
-              <div className="text-[9px] text-slate-500">
-                MPU-6050 3-Axis IMU
+              <div className="text-[9px] text-slate-400">
+                MPU-6050 Accelerometer
               </div>
             </div>
           </div>
 
-          {/* Camera Edge Vision Vectors */}
-          <div className="mt-2 pt-2 border-t border-slate-800/60">
-            <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-1">
-              <Camera className="w-3 h-3 text-cyan-400" />
-              <span>Camera Edge Vision Confidence:</span>
+          {/* Camera Edge Confidence */}
+          <div className="mt-2.5 pt-2 border-t border-slate-800">
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 font-bold mb-1.5">
+              <Camera className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Camera Vision Feature Confidence:</span>
             </div>
-            <div className="grid grid-cols-4 gap-1 text-[9px] text-center">
-              <div className="bg-slate-950 p-1 rounded">
-                <div className="text-slate-500">Flame</div>
-                <div className="font-bold text-red-400">{(sensorData.camera.fireConfidence * 100).toFixed(0)}%</div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+              <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
+                <div className="text-slate-400 text-[9px]">Flame Plume</div>
+                <div className="font-black text-red-400">{(sensorData.camera.fireConfidence * 100).toFixed(0)}%</div>
               </div>
-              <div className="bg-slate-950 p-1 rounded">
-                <div className="text-slate-500">Flood</div>
-                <div className="font-bold text-blue-400">{(sensorData.camera.floodConfidence * 100).toFixed(0)}%</div>
+              <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
+                <div className="text-slate-400 text-[9px]">Catchment Surge</div>
+                <div className="font-black text-cyan-400">{(sensorData.camera.floodConfidence * 100).toFixed(0)}%</div>
               </div>
-              <div className="bg-slate-950 p-1 rounded">
-                <div className="text-slate-500">Debris</div>
-                <div className="font-bold text-amber-400">{(sensorData.camera.debrisConfidence * 100).toFixed(0)}%</div>
-              </div>
-              <div className="bg-slate-950 p-1 rounded">
-                <div className="text-slate-500">Smog</div>
-                <div className="font-bold text-yellow-400">{(sensorData.camera.smogConfidence * 100).toFixed(0)}%</div>
+              <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
+                <div className="text-slate-400 text-[9px]">Slope Debris</div>
+                <div className="font-black text-amber-400">{(sensorData.camera.debrisConfidence * 100).toFixed(0)}%</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* SECTION 3: 443MHz LORA ROUTING & TOPOLOGY */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5">
-          <div className="flex items-center gap-1.5 text-slate-200 font-bold text-[11px] uppercase mb-2">
-            <Radio className="w-3.5 h-3.5 text-cyan-400" />
-            <span>443MHz Multi-Hop Routing</span>
+        {/* 3. 443MHz LORA ROUTING & MULTI-HOP PATH */}
+        <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase mb-2">
+            <Radio className="w-4 h-4 text-cyan-400" />
+            <span>443MHz LoRa Mesh Routing</span>
           </div>
 
-          <div className="space-y-1 text-[10px]">
+          <div className="space-y-1.5 text-[10px]">
             <div className="flex justify-between">
-              <span className="text-slate-400">Next Hop Relay:</span>
-              <span className="text-cyan-300 font-bold">
-                {selectedNode.nextHop === 0 ? 'Village Gateway (Direct)' : selectedNode.nextHop ? `Node ${selectedNode.nextHop}` : 'None'}
-              </span>
+              <span className="text-slate-400">Immediate Next Hop:</span>
+              <strong className="text-cyan-300 text-xs">
+                {selectedNode.nextHop === 0 ? 'Village Gateway (Direct)' : selectedNode.nextHop ? `Node ${selectedNode.nextHop}` : '—'}
+              </strong>
             </div>
 
-            <div className="flex justify-between">
-              <span className="text-slate-400">Full Path to Gateway:</span>
-              <span className="text-slate-200 font-mono">
+            <div>
+              <span className="text-slate-400 block mb-0.5">Full Multi-Hop Route to Gateway:</span>
+              <div className="bg-slate-950 p-1.5 rounded border border-slate-800 text-white font-bold flex items-center gap-1 flex-wrap">
                 {selectedNode.routeToGateway.map((id, idx) => (
-                  <span key={`p-${idx}`}>
-                    {id === 0 ? 'GW' : `N${id}`}
-                    {idx < selectedNode.routeToGateway.length - 1 ? ' → ' : ''}
+                  <span key={`p-${idx}`} className="flex items-center gap-1">
+                    <span className={
+                      id === currentMasterId 
+                        ? 'text-amber-400 font-black' 
+                        : id === 0 
+                        ? 'text-emerald-400 font-black' 
+                        : 'text-slate-200'
+                    }>
+                      {id === 0 ? 'GATEWAY' : id === currentMasterId ? `N${id}(MASTER)` : `N${id}`}
+                    </span>
+                    {idx < selectedNode.routeToGateway.length - 1 && (
+                      <span className="text-cyan-400">→</span>
+                    )}
                   </span>
                 ))}
-              </span>
+              </div>
             </div>
 
-            <div className="flex justify-between">
-              <span className="text-slate-400">RF Neighbors ({selectedNode.neighbors.length}):</span>
-              <span className="text-slate-300">
-                {selectedNode.neighbors.map(n => `N${n}`).join(', ') || 'Isolated'}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-slate-400">Packets Transmitted:</span>
-              <span className="text-slate-300">{selectedNode.transmittedPackets} packets</span>
-            </div>
-
-            <div className="flex justify-between pt-1 border-t border-slate-800/60">
-              <span className="text-slate-400">Master Election Fitness:</span>
+            <div className="flex justify-between pt-1 border-t border-slate-800">
+              <span className="text-slate-400">Master Candidate Score:</span>
               <span className="text-amber-400 font-bold">{selectedNode.electionScore} pts</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-slate-400">Transmitted Packets:</span>
+              <span className="text-white font-bold">{selectedNode.transmittedPackets} pkts</span>
             </div>
           </div>
         </div>

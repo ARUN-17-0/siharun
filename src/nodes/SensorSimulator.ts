@@ -20,7 +20,6 @@ export function createBaselineSensorData(def: NodePositionDefinition): SensorDat
       fireConfidence: 0.02,
       floodConfidence: 0.01,
       debrisConfidence: 0.02,
-      smogConfidence: 0.03,
       timestamp: Date.now()
     }
   };
@@ -40,34 +39,36 @@ export function createInitialTemporalFeatures(): TemporalFeatures {
 }
 
 export function createInitialNodeHealth(nodeId: number): NodeHealth {
-  // Give realistic slight variations: Node 1 has 88% battery, Node 7 has 94% battery, etc.
-  const battery = nodeId === 1 ? 88 : nodeId === 7 ? 94 : 85 + (nodeId * 3) % 14;
+  // Balanced realistic initial battery and health
+  const battery = nodeId === 1 ? 88 : nodeId === 7 ? 96 : 84 + (nodeId * 3) % 15;
   return {
     overallScore: 95,
     batteryLevel: battery,
-    internalTemp: 26.5,
-    rfQualityScore: 92,
+    internalTemp: 25.5,
+    rfQualityScore: 94,
     hazardExposure: 0,
     isSafe: true,
     status: 'HEALTHY'
   };
 }
 
-// Epicenter targets for each disaster scenario
+// Epicenter targets for the 3 Core Disaster Scenarios
 export const HAZARD_EPICENTERS: Record<ScenarioType, [number, number, number]> = {
   NORMAL: [0, 0, 0],
   FIRE: [-24, 7.0, -23],           // Near Node 1 & Node 2 in Forest Upper Ridge
   FLOOD: [-10, 1.2, 0],            // In River Valley near Node 4 & Node 5
-  LANDSLIDE: [-18, 4.8, 17],       // On steep slope near Node 6
-  POLLUTION: [12, 1.8, 0],         // Industrial/traffic near Node 8 & Node 9
+  LANDSLIDE: [-19, 4.8, 16],       // On steep slope near Node 6
   MASTER_FAILURE: [-26, 7.2, -22], // Node 1
   MASTER_HANDOVER: [-26, 7.2, -22],// Node 1
   COMPLETE_DEMO: [-24, 7.0, -23]   // Starts with Fire
 };
 
 /**
- * Deterministically updates a node's sensors toward scenario targets.
- * Rate of change is tracked to feed temporal features for the Edge AI model.
+ * Deterministically updates a node's sensors with 4-phase staged causal progression:
+ * Phase 1: Incipient Anomaly (initial uptick, triggers early warning threshold)
+ * Phase 2: Warning Dispatched across LoRa Mesh
+ * Phase 3: Village Evacuation in Progress
+ * Phase 4: Full Catastrophic Disaster Peak (Flood surge / wildfire / mudflow)
  */
 export function updateNodeSensors(
   currentData: SensorData,
@@ -76,17 +77,17 @@ export function updateNodeSensors(
   health: NodeHealth,
   def: NodePositionDefinition,
   scenario: ScenarioType,
-  scenarioIntensity: number, // 0.0 to 1.0 (gradual escalation)
+  disasterPhase: number, // 1 to 4
+  phaseProgress: number, // 0.0 to 1.0 within current phase
   dtSec: number
 ): { sensorData: SensorData; temporalFeatures: TemporalFeatures; health: NodeHealth } {
   const epicenter = HAZARD_EPICENTERS[scenario] || [0, 0, 0];
   const distToEpicenter = calculateDistance3D(def.position3D, epicenter);
   
-  // Proximity factor: closer nodes suffer higher intensity (decay over radius ~24 units)
+  // Proximity factor (attenuation over radius ~26 units)
   const proximity = Math.max(0, 1 - distToEpicenter / 26);
-  const effectiveHazard = scenarioIntensity * proximity;
 
-  // Target values based on scenario
+  // Target values based on scenario and staged causal phase
   let targetTemp = 22.0 + Math.sin(def.id) * 2;
   let targetHumidity = 58.0;
   let targetSmoke = 20.0;
@@ -102,78 +103,118 @@ export function updateNodeSensors(
     fireConfidence: 0.02,
     floodConfidence: 0.01,
     debrisConfidence: 0.02,
-    smogConfidence: 0.03,
     timestamp: Date.now()
   };
 
-  // Apply scenario physical dynamics
-  switch (scenario) {
-    case 'FIRE':
-    case 'COMPLETE_DEMO': {
-      if (effectiveHazard > 0.05) {
-        // Temperature spikes up to 88°C for Node 1 / close forest nodes
-        targetTemp += effectiveHazard * 66.0;
-        targetHumidity = Math.max(8.0, targetHumidity - effectiveHazard * 46.0);
-        targetSmoke += effectiveHazard * 680.0;
-        targetPM25 += effectiveHazard * 380.0;
-        targetPM10 += effectiveHazard * 520.0;
-        targetCamera.fireConfidence = Math.min(0.98, 0.05 + effectiveHazard * 0.93);
-      }
-      break;
-    }
-    case 'FLOOD': {
-      if (effectiveHazard > 0.05 || def.zone === 'RIVER_VALLEY') {
-        const floodFactor = Math.max(effectiveHazard, def.zone === 'RIVER_VALLEY' ? scenarioIntensity * 0.9 : 0);
-        targetRainfall = floodFactor * 95.0; // Heavy monsoon downpour mm/h
-        targetHumidity = Math.min(99.0, 60.0 + floodFactor * 38.0);
-        targetSoilMoisture = Math.min(99.0, 45.0 + floodFactor * 54.0);
+  // Staged Disaster Dynamics
+  if (scenario === 'FLOOD') {
+    if (def.zone === 'RIVER_VALLEY' || proximity > 0.05) {
+      if (disasterPhase === 1) {
+        // Phase 1: Incipient rain & catchment rise rate starts climbing
+        targetRainfall = 45.0 * phaseProgress;
+        targetHumidity = 75.0;
+        targetSoilMoisture = 65.0;
         if (def.zone === 'RIVER_VALLEY') {
-          targetWaterLevel = 1.2 + floodFactor * 6.5; // Up to 7.7m river overflow!
+          targetWaterLevel = 1.2 + 1.2 * phaseProgress; // Rises from 1.2m to 2.4m
         }
-        targetCamera.floodConfidence = Math.min(0.96, 0.05 + floodFactor * 0.92);
+        targetCamera.floodConfidence = 0.35 * phaseProgress;
+      } else if (disasterPhase === 2) {
+        // Phase 2: Warning Dispatched across mesh
+        targetRainfall = 65.0;
+        targetHumidity = 85.0;
+        targetSoilMoisture = 78.0;
+        if (def.zone === 'RIVER_VALLEY') {
+          targetWaterLevel = 2.4 + 0.8 * phaseProgress; // 2.4m to 3.2m
+        }
+        targetCamera.floodConfidence = 0.55;
+      } else if (disasterPhase === 3) {
+        // Phase 3: Village Evacuation Active (water is high, but not yet peak overflow)
+        targetRainfall = 80.0;
+        targetHumidity = 92.0;
+        targetSoilMoisture = 88.0;
+        if (def.zone === 'RIVER_VALLEY') {
+          targetWaterLevel = 3.2 + 1.6 * phaseProgress; // 3.2m to 4.8m
+        }
+        targetCamera.floodConfidence = 0.75;
+      } else if (disasterPhase >= 4) {
+        // Phase 4: Peak Inundation (Only AFTER village is evacuated)
+        targetRainfall = 110.0;
+        targetHumidity = 98.0;
+        targetSoilMoisture = 98.0;
+        if (def.zone === 'RIVER_VALLEY') {
+          targetWaterLevel = 4.8 + 2.8 * phaseProgress; // Surges up to 7.6m!
+        }
+        targetCamera.floodConfidence = 0.96;
       }
-      break;
     }
-    case 'LANDSLIDE': {
-      if (effectiveHazard > 0.05 || def.zone === 'SLOPE_RIDGE') {
-        const slopeFactor = Math.max(effectiveHazard, def.zone === 'SLOPE_RIDGE' ? scenarioIntensity * 0.85 : 0);
-        targetRainfall = slopeFactor * 70.0;
-        targetSoilMoisture = Math.min(98.0, 42.0 + slopeFactor * 55.0); // Saturation
-        targetTilt = 1.0 + slopeFactor * 24.5; // Shear displacement up to 25.5°
-        targetVibration = 0.02 + slopeFactor * 2.8; // Seismic rumble
-        targetCamera.debrisConfidence = Math.min(0.95, 0.04 + slopeFactor * 0.91);
+  } else if (scenario === 'FIRE' || scenario === 'COMPLETE_DEMO') {
+    if (proximity > 0.05) {
+      if (disasterPhase === 1) {
+        // Phase 1: Incipient thermal plume
+        targetTemp = 24.0 + 22.0 * proximity * phaseProgress; // Up to 46°C
+        targetHumidity = 32.0;
+        targetSmoke = 20.0 + 120.0 * proximity * phaseProgress;
+        targetPM25 = 14.0 + 80.0 * proximity * phaseProgress;
+        targetCamera.fireConfidence = 0.35 * phaseProgress;
+      } else if (disasterPhase === 2) {
+        // Phase 2: Mesh warning issued
+        targetTemp = 46.0 + 18.0 * proximity * phaseProgress;
+        targetHumidity = 22.0;
+        targetSmoke = 140.0 + 180.0 * proximity * phaseProgress;
+        targetCamera.fireConfidence = 0.65;
+      } else if (disasterPhase === 3) {
+        // Phase 3: Village alerts and defensible space evacuation
+        targetTemp = 64.0 + 12.0 * proximity * phaseProgress;
+        targetHumidity = 14.0;
+        targetSmoke = 320.0 + 200.0 * proximity * phaseProgress;
+        targetCamera.fireConfidence = 0.82;
+      } else if (disasterPhase >= 4) {
+        // Phase 4: Engulfment peak
+        targetTemp = 76.0 + 12.0 * proximity; // Up to 88°C
+        targetHumidity = 8.0;
+        targetSmoke = 720.0 * proximity;
+        targetPM25 = 420.0 * proximity;
+        targetCamera.fireConfidence = 0.98;
       }
-      break;
     }
-    case 'POLLUTION': {
-      if (effectiveHazard > 0.05 || def.zone === 'VILLAGE_APPROACH') {
-        const pollFactor = Math.max(effectiveHazard, def.zone === 'VILLAGE_APPROACH' ? scenarioIntensity * 0.85 : 0);
-        targetSmoke += pollFactor * 350.0;
-        targetPM25 += pollFactor * 420.0; // Severe air quality emergency
-        targetPM10 += pollFactor * 650.0;
-        targetCamera.smogConfidence = Math.min(0.97, 0.05 + pollFactor * 0.92);
+  } else if (scenario === 'LANDSLIDE') {
+    if (def.zone === 'SLOPE_RIDGE' || proximity > 0.05) {
+      if (disasterPhase === 1) {
+        targetRainfall = 40.0;
+        targetSoilMoisture = 75.0;
+        targetTilt = 1.0 + 3.0 * phaseProgress; // 1° to 4°
+        targetVibration = 0.02 + 0.3 * phaseProgress;
+        targetCamera.debrisConfidence = 0.3;
+      } else if (disasterPhase === 2) {
+        targetRainfall = 60.0;
+        targetSoilMoisture = 86.0;
+        targetTilt = 4.0 + 4.0 * phaseProgress; // 4° to 8°
+        targetVibration = 0.35 + 0.5 * phaseProgress;
+        targetCamera.debrisConfidence = 0.6;
+      } else if (disasterPhase === 3) {
+        targetRainfall = 75.0;
+        targetSoilMoisture = 94.0;
+        targetTilt = 8.0 + 6.0 * phaseProgress; // 8° to 14°
+        targetVibration = 0.85 + 0.8 * phaseProgress;
+        targetCamera.debrisConfidence = 0.8;
+      } else if (disasterPhase >= 4) {
+        targetRainfall = 90.0;
+        targetSoilMoisture = 98.0;
+        targetTilt = 14.0 + 8.5 * phaseProgress; // Massive slope shear up to 22.5°
+        targetVibration = 2.8;
+        targetCamera.debrisConfidence = 0.96;
       }
-      break;
     }
-    case 'MASTER_HANDOVER': {
-      // Specifically stress Node 1 thermally and degrade battery
-      if (def.id === 1) {
-        targetTemp = 82.0; // Dangerous overheat
-        targetSmoke = 420.0;
-        targetCamera.fireConfidence = 0.88;
-      }
-      break;
+  } else if (scenario === 'MASTER_HANDOVER') {
+    if (def.id === 1) {
+      targetTemp = 82.0;
+      targetSmoke = 420.0;
+      targetCamera.fireConfidence = 0.9;
     }
-    case 'MASTER_FAILURE': {
-      // Abrupt failure handled outside sensor step
-      break;
-    }
-    default:
-      break;
   }
 
-  // Smooth low-pass interpolation towards targets (physical inertia)
-  const alpha = Math.min(1.0, dtSec * 1.2);
+  // Smooth interpolation toward target
+  const alpha = Math.min(1.0, dtSec * 1.5);
   const newTemp = currentData.temperature + (targetTemp - currentData.temperature) * alpha;
   const newHumidity = currentData.humidity + (targetHumidity - currentData.humidity) * alpha;
   const newSmoke = currentData.smokeGas + (targetSmoke - currentData.smokeGas) * alpha;
@@ -189,11 +230,10 @@ export function updateNodeSensors(
     fireConfidence: currentData.camera.fireConfidence + (targetCamera.fireConfidence - currentData.camera.fireConfidence) * alpha,
     floodConfidence: currentData.camera.floodConfidence + (targetCamera.floodConfidence - currentData.camera.floodConfidence) * alpha,
     debrisConfidence: currentData.camera.debrisConfidence + (targetCamera.debrisConfidence - currentData.camera.debrisConfidence) * alpha,
-    smogConfidence: currentData.camera.smogConfidence + (targetCamera.smogConfidence - currentData.camera.smogConfidence) * alpha,
     timestamp: Date.now()
   };
 
-  // Compute rates of change (per minute equivalent)
+  // Compute rates of change (per minute)
   const dtMin = Math.max(0.01, dtSec / 60);
   const tempRate = (newTemp - prevData.temperature) / dtMin;
   const waterRate = (newWater - prevData.waterLevel) / dtMin;
@@ -207,25 +247,21 @@ export function updateNodeSensors(
       smokeGasRate: Math.round(smokeRate * 100) / 100,
       tiltRate: Math.round(tiltRate * 100) / 100
     },
-    persistenceCycles: effectiveHazard > 0.25 ? temporal.persistenceCycles + 1 : Math.max(0, temporal.persistenceCycles - 1),
+    persistenceCycles: disasterPhase >= 2 ? temporal.persistenceCycles + 1 : Math.max(0, temporal.persistenceCycles - 1),
     cumulativeRainfall: Math.round((temporal.cumulativeRainfall * 0.98 + (newRain * dtMin) / 60) * 10) / 10
   };
 
-  // Update node health based on temperature stress, battery consumption, and threat exposure
-  const internalTemp = Math.round(newTemp * 0.85 + 5.0); // Enclosure internal heat
+  // Node health calculation
+  const internalTemp = Math.round(newTemp * 0.85 + 5.0);
   let battery = health.batteryLevel;
   if (scenario === 'MASTER_HANDOVER' && def.id === 1) {
-    battery = Math.max(18, battery - dtSec * 3.5); // Rapid drain
+    battery = Math.max(18, battery - dtSec * 3.5);
   } else {
-    // Normal slow solar balancing
     battery = Math.min(100, Math.max(10, battery - dtSec * 0.05));
   }
 
-  // Hazard exposure score
-  const hazardExposure = Math.round(Math.min(100, effectiveHazard * 100));
+  const hazardExposure = Math.round(Math.min(100, proximity * (disasterPhase / 4) * 100));
 
-  // Overall health score calculation:
-  // Penalize internal temp > 55°C, low battery < 30%, high hazard exposure
   let healthScore = 100;
   if (internalTemp > 50) healthScore -= (internalTemp - 50) * 1.8;
   if (battery < 40) healthScore -= (40 - battery) * 1.2;
@@ -239,40 +275,35 @@ export function updateNodeSensors(
   else if (healthScore >= 15) status = 'CRITICAL';
   else status = 'FAILED';
 
-  const updatedHealth: NodeHealth = {
-    overallScore: healthScore,
-    batteryLevel: Math.round(battery * 10) / 10,
-    internalTemp: Math.round(internalTemp * 10) / 10,
-    rfQualityScore: Math.round(Math.max(20, 95 - hazardExposure * 0.4)),
-    hazardExposure,
-    isSafe,
-    status
-  };
-
-  const updatedSensorData: SensorData = {
-    temperature: Math.round(newTemp * 10) / 10,
-    humidity: Math.round(newHumidity * 10) / 10,
-    smokeGas: Math.round(newSmoke * 10) / 10,
-    pm25: Math.round(newPM25 * 10) / 10,
-    pm10: Math.round(newPM10 * 10) / 10,
-    rainfall: Math.round(newRain * 10) / 10,
-    soilMoisture: Math.round(newSoil * 10) / 10,
-    waterLevel: Math.round(newWater * 100) / 100,
-    tilt: Math.round(newTilt * 10) / 10,
-    vibration: Math.round(newVib * 100) / 100,
-    gps: { ...def.gps },
-    camera: {
-      fireConfidence: Math.round(newCamera.fireConfidence * 100) / 100,
-      floodConfidence: Math.round(newCamera.floodConfidence * 100) / 100,
-      debrisConfidence: Math.round(newCamera.debrisConfidence * 100) / 100,
-      smogConfidence: Math.round(newCamera.smogConfidence * 100) / 100,
-      timestamp: Date.now()
-    }
-  };
-
   return {
-    sensorData: updatedSensorData,
+    sensorData: {
+      temperature: Math.round(newTemp * 10) / 10,
+      humidity: Math.round(newHumidity * 10) / 10,
+      smokeGas: Math.round(newSmoke * 10) / 10,
+      pm25: Math.round(newPM25 * 10) / 10,
+      pm10: Math.round(newPM10 * 10) / 10,
+      rainfall: Math.round(newRain * 10) / 10,
+      soilMoisture: Math.round(newSoil * 10) / 10,
+      waterLevel: Math.round(newWater * 100) / 100,
+      tilt: Math.round(newTilt * 10) / 10,
+      vibration: Math.round(newVib * 100) / 100,
+      gps: { ...def.gps },
+      camera: {
+        fireConfidence: Math.round(newCamera.fireConfidence * 100) / 100,
+        floodConfidence: Math.round(newCamera.floodConfidence * 100) / 100,
+        debrisConfidence: Math.round(newCamera.debrisConfidence * 100) / 100,
+        timestamp: Date.now()
+      }
+    },
     temporalFeatures: updatedTemporal,
-    health: updatedHealth
+    health: {
+      overallScore: healthScore,
+      batteryLevel: Math.round(battery * 10) / 10,
+      internalTemp: Math.round(internalTemp * 10) / 10,
+      rfQualityScore: Math.round(Math.max(20, 95 - hazardExposure * 0.4)),
+      hazardExposure,
+      isSafe,
+      status
+    }
   };
 }
