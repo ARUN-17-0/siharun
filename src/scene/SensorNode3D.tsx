@@ -57,125 +57,201 @@ export const SensorNode3D: React.FC<SensorNode3DProps> = ({
         <meshBasicMaterial />
       </mesh>
 
-      {/* Tree Mounting for Node 1 (Mountain Pine Tree) vs Ground Anchor Post for others */}
+      {/* Tree Mounting for Node 1 (Mountain Pine Tree) vs Heavy-Duty Ground Foundation for others */}
       {node.id === 1 ? (
         <group>
-          {/* Mountain Pine Tree Trunk extending to mountain ground level */}
+          {/* Mountain Pine Tree Trunk extending down to mountain terrain */}
           <mesh position={[0.42, -1.2, -0.15]} castShadow>
-            <cylinderGeometry args={[0.26, 0.38, 4.4, 8]} />
-            <meshStandardMaterial color="#3b2010" roughness={0.92} />
+            <cylinderGeometry args={[0.26, 0.38, 4.4, 10]} />
+            <meshStandardMaterial color="#2d1a0c" roughness={0.94} />
           </mesh>
           {/* Pine Tree Upper Foliage Cones */}
           <group position={[0.42, 1.2, -0.15]}>
             <mesh position={[0, 0.6, 0]} castShadow>
               <coneGeometry args={[1.5, 2.0, 7]} />
-              <meshStandardMaterial color="#1a351a" roughness={0.85} />
+              <meshStandardMaterial color="#1a351a" roughness={0.88} />
             </mesh>
             <mesh position={[0, 1.6, 0]} castShadow>
               <coneGeometry args={[1.1, 1.6, 7]} />
-              <meshStandardMaterial color="#244724" roughness={0.85} />
+              <meshStandardMaterial color="#224722" roughness={0.88} />
             </mesh>
             <mesh position={[0, 2.4, 0]} castShadow>
               <coneGeometry args={[0.7, 1.2, 7]} />
-              <meshStandardMaterial color="#315c31" roughness={0.85} />
+              <meshStandardMaterial color="#2d582d" roughness={0.88} />
             </mesh>
           </group>
-          {/* Heavy-duty Galvanized Steel Tree-Mounting Clamp & Bracket */}
+          {/* Heavy-duty Stainless Steel Tree Strapping Bands & Articulated Bracket */}
           <group position={[0.2, 0.75, -0.08]}>
             <mesh castShadow>
-              <boxGeometry args={[0.45, 0.12, 0.25]} />
-              <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.25} />
+              <boxGeometry args={[0.45, 0.14, 0.26]} />
+              <meshStandardMaterial color="#475569" metalness={0.85} roughness={0.25} />
             </mesh>
-            {/* Trunk clamp band */}
-            <mesh position={[0.22, 0, -0.05]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.3, 0.3, 0.08, 16, 1, true]} />
-              <meshStandardMaterial color="#475569" metalness={0.9} roughness={0.3} side={THREE.DoubleSide} />
+            {/* Dual trunk clamp bands with ratchet locks */}
+            <mesh position={[0.22, 0.08, -0.05]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.3, 0.3, 0.05, 16, 1, true]} />
+              <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.3} side={THREE.DoubleSide} />
+            </mesh>
+            <mesh position={[0.22, -0.08, -0.05]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.3, 0.3, 0.05, 16, 1, true]} />
+              <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.3} side={THREE.DoubleSide} />
             </mesh>
           </group>
         </group>
       ) : (
-        /* Standard Ground Foundation / Anchor Post */
-        <mesh position={[0, 0.3, 0]} castShadow>
-          <cylinderGeometry args={[0.08, 0.12, 0.6, 8]} />
-          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
-        </mesh>
+        /* Heavy-duty Galvanized Steel Ground Tripod & Base Anchor */
+        <group position={[0, 0, 0]}>
+          {/* Main Central Mast Post */}
+          <mesh position={[0, 0.35, 0]} castShadow>
+            <cylinderGeometry args={[0.065, 0.075, 0.7, 10]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} />
+          </mesh>
+          {/* Triangular Heavy Anchor Base Plate */}
+          <mesh position={[0, 0.04, 0]} receiveShadow>
+            <cylinderGeometry args={[0.35, 0.38, 0.08, 6]} />
+            <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.35} />
+          </mesh>
+          {/* 3 Angled Stabilizer Struts */}
+          {[0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].map((angle, i) => (
+            <mesh 
+              key={`strut-${i}`}
+              position={[Math.cos(angle) * 0.22, 0.18, Math.sin(angle) * 0.22]} 
+              rotation={[Math.sin(angle) * 0.6, 0, -Math.cos(angle) * 0.6]}
+              castShadow
+            >
+              <cylinderGeometry args={[0.02, 0.02, 0.42, 6]} />
+              <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.3} />
+            </mesh>
+          ))}
+        </group>
       )}
 
-      {/* Weatherproof IP67 Sensor Box (Enclosure) */}
-      <mesh position={[0, 0.75, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.7, 0.55, 0.45]} />
-        <meshStandardMaterial 
-          color={!node.isAlive ? "#1e293b" : isSelected ? "#38bdf8" : "#94a3b8"} 
-          metalness={0.65} 
-          roughness={0.35} 
-        />
-      </mesh>
-
-      {/* Front Enclosure Panel (Dark faceplate) */}
-      <mesh position={[0, 0.75, 0.23]}>
-        <planeGeometry args={[0.58, 0.44]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.2} />
-      </mesh>
-
-      {/* Multi-color Status Indicator LED */}
-      <mesh position={[0.2, 0.88, 0.24]}>
-        <sphereGeometry args={[0.045, 12, 12]} />
-        <meshStandardMaterial 
-          color={statusColor} 
-          emissive={statusColor} 
-          emissiveIntensity={node.isAlive ? 2.5 : 0.2} 
-        />
-      </mesh>
-
-      {/* Small Angled Solar Panel */}
-      <group position={[0, 1.12, 0]} rotation={[0.4, 0, 0]}>
-        {/* Panel Mount Bracket */}
-        <mesh position={[0, -0.05, 0]}>
-          <boxGeometry args={[0.08, 0.12, 0.08]} />
-          <meshStandardMaterial color="#475569" metalness={0.8} />
-        </mesh>
-        {/* Solar Glass Cell */}
-        <mesh position={[0, 0.02, 0]} castShadow>
-          <boxGeometry args={[0.85, 0.03, 0.6]} />
+      {/* Industrial Powder-Coated IP67 Die-Cast Aluminum Enclosure */}
+      <group position={[0, 0.78, 0]}>
+        {/* Main Aluminum Chassis */}
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[0.68, 0.54, 0.42]} />
           <meshStandardMaterial 
-            color="#1e1b4b" 
-            roughness={0.15} 
-            metalness={0.85} 
-            emissive="#1e3a8a" 
-            emissiveIntensity={0.2} 
+            color={!node.isAlive ? "#1e293b" : isSelected ? "#0284c7" : "#94a3b8"} 
+            metalness={0.7} 
+            roughness={0.32} 
           />
         </mesh>
-      </group>
 
-      {/* Weatherproof Optical Camera Turret */}
-      <group position={[-0.32, 0.85, 0.15]} rotation={[0, -0.4, 0.1]}>
-        {/* Camera body */}
-        <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.07, 0.09, 0.18, 12]} />
-          <meshStandardMaterial color="#0f172a" metalness={0.8} />
-        </mesh>
-        {/* Optical Lens Dome */}
-        <mesh position={[0, 0, 0.1]}>
-          <sphereGeometry args={[0.06, 12, 12]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.1} metalness={0.9} />
-        </mesh>
-      </group>
+        {/* Rear Heatsink Cooling Fins (5 vertical aluminum fins) */}
+        {[-0.2, -0.1, 0, 0.1, 0.2].map((xOffset, i) => (
+          <mesh key={`fin-${i}`} position={[xOffset, 0, -0.23]} castShadow>
+            <boxGeometry args={[0.025, 0.46, 0.06]} />
+            <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.3} />
+          </mesh>
+        ))}
 
-      {/* 443 MHz Helical / Whip LoRa Antenna */}
-      <group position={[0.26, 1.02, -0.12]}>
-        <mesh position={[0, 0.42, 0]} castShadow>
-          <cylinderGeometry args={[0.015, 0.02, 0.85, 8]} />
-          <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+        {/* Stainless Steel Side Latches */}
+        <mesh position={[-0.35, 0.06, 0]}>
+          <boxGeometry args={[0.03, 0.12, 0.06]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
         </mesh>
-        {/* Antenna Tip Glow LED */}
-        <mesh ref={antennaGlowRef} position={[0, 0.86, 0]}>
-          <sphereGeometry args={[0.035, 8, 8]} />
+        <mesh position={[0.35, 0.06, 0]}>
+          <boxGeometry args={[0.03, 0.12, 0.06]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+        </mesh>
+
+        {/* Bottom Waterproof Cable Gland & Sensor Probe Wire */}
+        <mesh position={[-0.12, -0.31, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.1, 8]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.4} />
+        </mesh>
+        <mesh position={[0.12, -0.31, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.1, 8]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.4} />
+        </mesh>
+
+        {/* Front Gasketed Faceplate */}
+        <mesh position={[0, 0, 0.215]}>
+          <planeGeometry args={[0.58, 0.44]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.25} />
+        </mesh>
+
+        {/* Multi-color Status Indicator LED */}
+        <mesh position={[0.2, 0.14, 0.22]}>
+          <sphereGeometry args={[0.042, 12, 12]} />
           <meshStandardMaterial 
-            color={node.isMaster ? "#eab308" : "#06b6d4"} 
-            emissive={node.isMaster ? "#eab308" : "#06b6d4"} 
-            emissiveIntensity={node.isAlive ? 2.0 : 0} 
+            color={statusColor} 
+            emissive={statusColor} 
+            emissiveIntensity={node.isAlive ? 3.0 : 0.2} 
           />
         </mesh>
+
+        {/* Monocrystalline Solar Panel Bank */}
+        <group position={[0, 0.38, 0]} rotation={[0.42, 0, 0]}>
+          {/* Swivel Mount Arm */}
+          <mesh position={[0, -0.06, 0]}>
+            <cylinderGeometry args={[0.03, 0.04, 0.14, 8]} />
+            <meshStandardMaterial color="#475569" metalness={0.85} />
+          </mesh>
+          {/* Aluminum Panel Bevel Frame */}
+          <mesh position={[0, 0.02, 0]} castShadow>
+            <boxGeometry args={[0.88, 0.04, 0.62]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.25} />
+          </mesh>
+          {/* Monocrystalline Silicon Photovoltaic Wafer */}
+          <mesh position={[0, 0.042, 0]}>
+            <planeGeometry args={[0.82, 0.56]} />
+            <meshStandardMaterial 
+              color="#091428" 
+              roughness={0.12} 
+              metalness={0.88} 
+              emissive="#1e3a8a" 
+              emissiveIntensity={0.25} 
+            />
+          </mesh>
+          {/* Silver Busbar Grid Lines */}
+          <mesh position={[0, 0.044, 0]}>
+            <planeGeometry args={[0.78, 0.012]} />
+            <meshBasicMaterial color="#93c5fd" />
+          </mesh>
+        </group>
+
+        {/* Weatherproof Optical Camera Turret with Sun Hood */}
+        <group position={[-0.32, 0.12, 0.14]} rotation={[0, -0.38, 0.12]}>
+          {/* Camera Housing Body */}
+          <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.075, 0.09, 0.19, 14]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.75} roughness={0.3} />
+          </mesh>
+          {/* Cylindrical Sun Hood / Rain Visor */}
+          <mesh position={[0, 0, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.082, 0.082, 0.06, 14, 1, true]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.85} side={THREE.DoubleSide} />
+          </mesh>
+          {/* Anti-Reflective Optical Sapphire/Glass Lens */}
+          <mesh position={[0, 0, 0.09]}>
+            <sphereGeometry args={[0.062, 14, 14]} />
+            <meshStandardMaterial color="#0284c7" roughness={0.06} metalness={0.94} />
+          </mesh>
+        </group>
+
+        {/* 443 MHz LoRa Antenna with Brass Gold-Plated SMA Bulkhead Connector */}
+        <group position={[0.26, 0.27, -0.12]}>
+          {/* Brass Hex Nut SMA Connector Base */}
+          <mesh position={[0, 0.04, 0]}>
+            <cylinderGeometry args={[0.038, 0.038, 0.08, 6]} />
+            <meshStandardMaterial color="#eab308" metalness={0.92} roughness={0.25} />
+          </mesh>
+          {/* Flexible Helical Whip Antenna Rod */}
+          <mesh position={[0, 0.46, 0]} castShadow>
+            <cylinderGeometry args={[0.014, 0.022, 0.84, 8]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.7} roughness={0.35} />
+          </mesh>
+          {/* Antenna Tip RF Status Indicator */}
+          <mesh ref={antennaGlowRef} position={[0, 0.9, 0]}>
+            <sphereGeometry args={[0.038, 8, 8]} />
+            <meshStandardMaterial 
+              color={node.isMaster ? "#eab308" : "#06b6d4"} 
+              emissive={node.isMaster ? "#eab308" : "#06b6d4"} 
+              emissiveIntensity={node.isAlive ? 2.5 : 0} 
+            />
+          </mesh>
+        </group>
       </group>
 
       {/* MASTER NODE CROWN / GOLDEN AURA */}

@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Sky } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { NodeState, ActivePacketAnimation, ScenarioType, EvacuationState } from '../types';
@@ -11,6 +11,50 @@ import { MeshLinks3D } from './MeshLinks3D';
 import { PacketStream3D } from './PacketStream3D';
 import { HazardOverlays3D } from './HazardOverlays3D';
 import { GATEWAY_POSITION } from '../nodes/NodePhysics';
+
+// Distant Alpine Mountain Panorama Silhouette
+const DistantMountainPanorama: React.FC = () => {
+  const peaks = useMemo(() => {
+    const list: { position: [number, number, number]; scale: [number, number, number]; rotY: number }[] = [];
+    const count = 18;
+    const radius = 95;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const r = radius + (Math.sin(i * 3) * 12);
+      const x = Math.cos(angle) * r;
+      const z = Math.sin(angle) * r;
+      const h = 28 + ((i * 7) % 22);
+      const w = 32 + ((i * 5) % 20);
+      list.push({
+        position: [x, h * 0.45 - 6, z],
+        scale: [w, h, w],
+        rotY: angle + Math.PI / 4 + (i % 3) * 0.2
+      });
+    }
+    return list;
+  }, []);
+
+  return (
+    <group>
+      {peaks.map((p, idx) => (
+        <mesh key={`distant-peak-${idx}`} position={p.position} rotation={[0, p.rotY, 0]} scale={p.scale}>
+          <coneGeometry args={[1, 1, 5]} />
+          <meshStandardMaterial 
+            color="#2a3848" 
+            roughness={0.9} 
+            metalness={0.1} 
+            flatShading 
+          />
+        </mesh>
+      ))}
+      {/* Distant horizon mist disc */}
+      <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[75, 140, 32]} />
+        <meshBasicMaterial color="#4a6378" transparent opacity={0.65} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+};
 
 interface DigitalTwinCanvasProps {
   nodes: NodeState[];
@@ -83,31 +127,44 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
           maxDistance={120}
         />
 
+        {/* Atmospheric Sky Shader */}
+        <Sky
+          turbidity={6.5}
+          rayleigh={2.2}
+          mieCoefficient={0.005}
+          mieDirectionalG={0.82}
+          sunPosition={[45, 30, 25]}
+        />
+
         {/* Realistic Natural Atmospheric Lighting */}
-        <ambientLight intensity={0.45} />
+        <ambientLight intensity={0.42} color="#e2e8f0" />
         
-        {/* Soft Sun Light */}
+        {/* Warm Golden Sunlight with Soft Shadows */}
         <directionalLight
-          position={[40, 50, 20]}
-          intensity={1.2}
+          position={[45, 38, 25]}
+          intensity={1.35}
+          color="#fffbeb"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-far={140}
-          shadow-camera-left={-45}
-          shadow-camera-right={45}
-          shadow-camera-top={45}
-          shadow-camera-bottom={-45}
+          shadow-camera-far={160}
+          shadow-camera-left={-55}
+          shadow-camera-right={55}
+          shadow-camera-top={55}
+          shadow-camera-bottom={-55}
           shadow-bias={-0.0001}
         />
 
-        {/* Sky / Ground hemisphere fill */}
+        {/* Sky / Ground hemisphere fill light */}
         <hemisphereLight
-          args={['#38bdf8', '#0f172a', 0.5]}
+          args={['#7dd3fc', '#1e293b', 0.45]}
         />
 
-        {/* Atmospheric Fog */}
-        <fog attach="fog" args={['#070a10', 45, 125]} />
+        {/* Subtle Valley Horizon Fog */}
+        <fog attach="fog" args={['#8da9be', 55, 145]} />
+
+        {/* Distant Alpine Mountain Panorama Silhouette */}
+        <DistantMountainPanorama />
 
         {/* 3D Scene Primitives */}
         <ProceduralTerrain />

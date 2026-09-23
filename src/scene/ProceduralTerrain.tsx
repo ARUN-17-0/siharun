@@ -1,206 +1,485 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getTerrainHeight } from '../nodes/NodePhysics';
+import { getTerrainHeight, getRiverCenter } from '../nodes/NodePhysics';
 
-
-// Procedural Tree Component (Pine tree or deciduous)
-interface TreeProps {
+// Realistic Procedural Himalayan Pine / Fir Conifer Tree
+interface ConiferTreeProps {
   position: [number, number, number];
   scale?: number;
-  isPine?: boolean;
+  species?: 'PINE' | 'FIR' | 'BIRCH';
 }
 
-const Tree: React.FC<TreeProps> = ({ position, scale = 1, isPine = true }) => {
+const ConiferTree: React.FC<ConiferTreeProps> = ({ position, scale = 1, species = 'PINE' }) => {
   return (
     <group position={position} scale={[scale, scale, scale]}>
-      {/* Trunk */}
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.22, 1.4, 6]} />
-        <meshStandardMaterial color="#4a2e18" roughness={0.9} />
+      {/* Trunk with Bark Depth */}
+      <mesh position={[0, 0.9, 0]} castShadow>
+        <cylinderGeometry args={[species === 'BIRCH' ? 0.12 : 0.18, 0.28, 1.8, 8]} />
+        <meshStandardMaterial 
+          color={species === 'BIRCH' ? '#e2e8f0' : '#332014'} 
+          roughness={0.94} 
+          metalness={0.05} 
+        />
       </mesh>
-      {/* Foliage */}
-      {isPine ? (
-        <group position={[0, 1.4, 0]}>
+
+      {/* Foliage Canopy */}
+      {species === 'BIRCH' ? (
+        // Deciduous Birch foliage (organic leafy masses)
+        <group position={[0, 1.8, 0]}>
           <mesh position={[0, 0.4, 0]} castShadow>
-            <coneGeometry args={[1.2, 1.6, 6]} />
-            <meshStandardMaterial color="#1e3a1e" roughness={0.8} />
+            <sphereGeometry args={[0.9, 7, 7]} />
+            <meshStandardMaterial color="#4d7c0f" roughness={0.82} />
           </mesh>
-          <mesh position={[0, 1.2, 0]} castShadow>
-            <coneGeometry args={[0.9, 1.4, 6]} />
-            <meshStandardMaterial color="#2d522d" roughness={0.8} />
-          </mesh>
-          <mesh position={[0, 1.9, 0]} castShadow>
-            <coneGeometry args={[0.6, 1.1, 6]} />
-            <meshStandardMaterial color="#3d6b3d" roughness={0.8} />
+          <mesh position={[0.3, 0.8, 0.2]} castShadow>
+            <sphereGeometry args={[0.65, 6, 6]} />
+            <meshStandardMaterial color="#65a30d" roughness={0.8} />
           </mesh>
         </group>
       ) : (
-        <mesh position={[0, 1.6, 0]} castShadow>
-          <sphereGeometry args={[0.9, 7, 7]} />
-          <meshStandardMaterial color="#3b6e2e" roughness={0.8} />
-        </mesh>
+        // Conifer Pine / Alpine Fir (multi-tier needle tiers)
+        <group position={[0, 1.3, 0]}>
+          {/* Tier 1 (Lowest broad tier) */}
+          <mesh position={[0, 0.35, 0]} castShadow>
+            <coneGeometry args={[1.5, 1.3, 8]} />
+            <meshStandardMaterial color="#142c16" roughness={0.85} />
+          </mesh>
+          {/* Tier 2 */}
+          <mesh position={[0, 1.0, 0]} rotation={[0, 0.4, 0]} castShadow>
+            <coneGeometry args={[1.25, 1.2, 8]} />
+            <meshStandardMaterial color="#1a381d" roughness={0.85} />
+          </mesh>
+          {/* Tier 3 */}
+          <mesh position={[0, 1.65, 0]} rotation={[0, 0.8, 0]} castShadow>
+            <coneGeometry args={[0.95, 1.1, 7]} />
+            <meshStandardMaterial color="#214524" roughness={0.85} />
+          </mesh>
+          {/* Tier 4 */}
+          <mesh position={[0, 2.25, 0]} rotation={[0, 1.2, 0]} castShadow>
+            <coneGeometry args={[0.65, 0.95, 7]} />
+            <meshStandardMaterial color="#2a572e" roughness={0.85} />
+          </mesh>
+          {/* Tier 5 (Top spire) */}
+          <mesh position={[0, 2.75, 0]} castShadow>
+            <coneGeometry args={[0.38, 0.75, 6]} />
+            <meshStandardMaterial color="#356b3a" roughness={0.85} />
+          </mesh>
+        </group>
       )}
     </group>
   );
 };
 
-// Procedural Village Hut / House
-interface HouseProps {
+// Realistic Himalayan Mountain House
+interface MountainHouseProps {
   position: [number, number, number];
   rotationY?: number;
   scale?: number;
 }
 
-const House: React.FC<HouseProps> = ({ position, rotationY = 0, scale = 1 }) => {
+const MountainHouse: React.FC<MountainHouseProps> = ({ position, rotationY = 0, scale = 1 }) => {
   return (
     <group position={position} rotation={[0, rotationY, 0]} scale={[scale, scale, scale]}>
-      {/* House Base */}
-      <mesh position={[0, 0.75, 0]} castShadow receiveShadow>
-        <boxGeometry args={[2.2, 1.5, 2.0]} />
-        <meshStandardMaterial color="#c2a685" roughness={0.85} />
+      {/* 1. Stone Masonry Basement / Foundation */}
+      <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.2, 0.8, 2.6]} />
+        <meshStandardMaterial color="#64748b" roughness={0.95} metalness={0.1} />
       </mesh>
-      {/* Sloped Roof */}
-      <mesh position={[0, 1.85, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[1.8, 1.0, 4]} />
-        <meshStandardMaterial color="#8b4513" roughness={0.7} />
+
+      {/* 2. Weathered Timber Upper Floor */}
+      <mesh position={[0, 1.35, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.0, 1.1, 2.4]} />
+        <meshStandardMaterial color="#573e27" roughness={0.9} />
       </mesh>
-      {/* Door */}
-      <mesh position={[0, 0.5, 1.01]}>
-        <planeGeometry args={[0.5, 1.0]} />
-        <meshStandardMaterial color="#331c0a" roughness={0.9} />
+
+      {/* 3. Pitched Slate / Tin Roof */}
+      <group position={[0, 2.1, 0]}>
+        {/* Main Gabled Roof Ridge */}
+        <mesh rotation={[0, 0, 0]} castShadow>
+          <coneGeometry args={[2.5, 1.2, 4]} />
+          <meshStandardMaterial color="#334155" roughness={0.7} metalness={0.25} />
+        </mesh>
+        {/* Overhanging Eaves Trim */}
+        <mesh position={[0, -0.2, 0]}>
+          <boxGeometry args={[3.6, 0.08, 3.0]} />
+          <meshStandardMaterial color="#2d1f14" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* 4. Stone Chimney */}
+      <mesh position={[0.9, 2.3, 0.4]} castShadow>
+        <boxGeometry args={[0.35, 1.2, 0.35]} />
+        <meshStandardMaterial color="#475569" roughness={0.95} />
       </mesh>
-      {/* Window */}
-      <mesh position={[0.6, 0.8, 1.01]}>
-        <planeGeometry args={[0.4, 0.4]} />
-        <meshStandardMaterial color="#fef08a" emissive="#ca8a04" emissiveIntensity={0.3} />
+
+      {/* 5. Wooden Porch & Door */}
+      <mesh position={[0, 0.4, 1.35]} castShadow>
+        <boxGeometry args={[1.2, 0.15, 0.6]} />
+        <meshStandardMaterial color="#422e1b" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 1.05, 1.21]}>
+        <planeGeometry args={[0.65, 1.2]} />
+        <meshStandardMaterial color="#261a10" roughness={0.8} />
+      </mesh>
+
+      {/* 6. Multi-pane Windows with Warm Interior Light */}
+      <mesh position={[0.9, 1.4, 1.21]}>
+        <planeGeometry args={[0.5, 0.5]} />
+        <meshStandardMaterial color="#fef08a" emissive="#eab308" emissiveIntensity={0.65} roughness={0.2} />
+      </mesh>
+      <mesh position={[-0.9, 1.4, 1.21]}>
+        <planeGeometry args={[0.5, 0.5]} />
+        <meshStandardMaterial color="#fef08a" emissive="#eab308" emissiveIntensity={0.65} roughness={0.2} />
+      </mesh>
+
+      {/* 7. Woodpile by the side */}
+      <mesh position={[1.7, 0.45, 0]} rotation={[0, 0.2, 0]} castShadow>
+        <boxGeometry args={[0.6, 0.7, 1.2]} />
+        <meshStandardMaterial color="#713f12" roughness={0.95} />
       </mesh>
     </group>
   );
 };
 
+// Realistic Natural Mossy Boulder
+interface BoulderProps {
+  position: [number, number, number];
+  scale: [number, number, number];
+  rotation: [number, number, number];
+}
+
+const Boulder: React.FC<BoulderProps> = ({ position, scale, rotation }) => {
+  return (
+    <mesh position={position} scale={scale} rotation={rotation} castShadow receiveShadow>
+      <dodecahedronGeometry args={[1.0, 1]} />
+      <meshStandardMaterial color="#475569" roughness={0.92} metalness={0.05} />
+    </mesh>
+  );
+};
+
+// Realistic Timber Truss Road Bridge across the river
+interface BridgeProps {
+  position: [number, number, number];
+  rotationY: number;
+}
+
+const RiverBridge: React.FC<BridgeProps> = ({ position, rotationY }) => {
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      {/* Stone Abutments on both banks */}
+      <mesh position={[-5.5, 0.4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.6, 1.4, 3.6]} />
+        <meshStandardMaterial color="#475569" roughness={0.95} />
+      </mesh>
+      <mesh position={[5.5, 0.4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.6, 1.4, 3.6]} />
+        <meshStandardMaterial color="#475569" roughness={0.95} />
+      </mesh>
+
+      {/* Center Stone Pier in Riverbed */}
+      <mesh position={[0, -0.4, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.7, 0.9, 2.2, 8]} />
+        <meshStandardMaterial color="#334155" roughness={0.95} />
+      </mesh>
+
+      {/* Heavy Timber Deck */}
+      <mesh position={[0, 1.15, 0]} castShadow receiveShadow>
+        <boxGeometry args={[12.5, 0.25, 3.2]} />
+        <meshStandardMaterial color="#452b17" roughness={0.9} />
+      </mesh>
+
+      {/* Wooden Handrails & Cross-trusses */}
+      <group position={[0, 1.6, 1.45]}>
+        <mesh castShadow>
+          <boxGeometry args={[12.5, 0.08, 0.1]} />
+          <meshStandardMaterial color="#2e1d0f" roughness={0.9} />
+        </mesh>
+        {/* Railing posts */}
+        {[-5, -2.5, 0, 2.5, 5].map((xOffset, i) => (
+          <mesh key={`post-f-${i}`} position={[xOffset, -0.22, 0]} castShadow>
+            <boxGeometry args={[0.1, 0.55, 0.1]} />
+            <meshStandardMaterial color="#2e1d0f" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+      <group position={[0, 1.6, -1.45]}>
+        <mesh castShadow>
+          <boxGeometry args={[12.5, 0.08, 0.1]} />
+          <meshStandardMaterial color="#2e1d0f" roughness={0.9} />
+        </mesh>
+        {[-5, -2.5, 0, 2.5, 5].map((xOffset, i) => (
+          <mesh key={`post-b-${i}`} position={[xOffset, -0.22, 0]} castShadow>
+            <boxGeometry args={[0.1, 0.55, 0.1]} />
+            <meshStandardMaterial color="#2e1d0f" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
+};
+
 export const ProceduralTerrain: React.FC = () => {
-  // Generate terrain geometry with vertex height displacement and color gradation
+  const waterRef = useRef<THREE.Mesh>(null);
+
+  // 1. High-Resolution Multi-Tone Fractal Mountain Mesh
   const terrainGeo = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(80, 80, 70, 70);
+    // 100x100 resolution for smooth organic curvature and jagged ridge crests
+    const geo = new THREE.PlaneGeometry(105, 105, 110, 110);
     geo.rotateX(-Math.PI / 2);
 
     const pos = geo.attributes.position;
     const count = pos.count;
-    const colors = new Float32Array(count * 3);
 
+    // First pass: Calculate all elevations
     for (let i = 0; i < count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
       const y = getTerrainHeight(x, z);
       pos.setY(i, y);
+    }
 
-      // Color based on height and zone
-      // Mountain ridge = rock slate/grey
-      // Forest = lush deep green
-      // River valley = moist brown/sand
-      // Village = warm earth/grass
-      if (y > 5.5) {
-        // High mountain ridge
-        colors[i * 3 + 0] = 0.38; // R
-        colors[i * 3 + 1] = 0.42; // G
-        colors[i * 3 + 2] = 0.36; // B
-      } else if (x < 0 && y > 2.0) {
-        // Forest slope
-        colors[i * 3 + 0] = 0.18;
-        colors[i * 3 + 1] = 0.35;
-        colors[i * 3 + 2] = 0.16;
-      } else if (y < 1.4) {
-        // Riverbed / sand
-        colors[i * 3 + 0] = 0.44;
-        colors[i * 3 + 1] = 0.40;
-        colors[i * 3 + 2] = 0.28;
+    geo.computeVertexNormals();
+    const normals = geo.attributes.normal;
+    const colors = new Float32Array(count * 3);
+
+    // Second pass: Physical geology-based PBR vertex coloring
+    for (let i = 0; i < count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      const normalY = normals.getY(i); // 1.0 = flat, <0.75 = steep cliff!
+      const riverCenter = getRiverCenter(z);
+      const distToRiver = Math.abs(x - riverCenter);
+
+      let r = 0.22, g = 0.38, b = 0.18; // Default lush alpine grass
+
+      if (normalY < 0.72 && y > 3.0) {
+        // Steep Rock Cliff / Mountain Strata
+        const band = Math.sin(y * 1.5) * 0.08;
+        r = 0.34 + band;
+        g = 0.36 + band;
+        b = 0.38 + band;
+      } else if (y > 15.0) {
+        // High Alpine Ridge Peak with Frost / Scree
+        r = 0.55;
+        g = 0.58;
+        b = 0.62;
+      } else if (distToRiver < 5.0) {
+        // Riverbed Gravel & Sand Shoreline
+        const wetness = Math.max(0, 1 - distToRiver / 4.5);
+        r = 0.40 - wetness * 0.15;
+        g = 0.37 - wetness * 0.14;
+        b = 0.28 - wetness * 0.10;
+      } else if (x < 0 && y > 2.5) {
+        // Dense Conifer Forest Floor (Dark humus, needle litter, damp moss)
+        r = 0.13;
+        g = 0.26;
+        b = 0.12;
+      } else if (x > 8 && z > -8 && z < 28) {
+        // Village Farmland & Pasture Meadow
+        r = 0.30;
+        g = 0.48;
+        b = 0.22;
       } else {
-        // Village / meadow
-        colors[i * 3 + 0] = 0.24;
-        colors[i * 3 + 1] = 0.42;
-        colors[i * 3 + 2] = 0.20;
+        // Open Hillside Meadow
+        r = 0.24;
+        g = 0.40;
+        b = 0.18;
       }
+
+      colors[i * 3 + 0] = r;
+      colors[i * 3 + 1] = g;
+      colors[i * 3 + 2] = b;
     }
 
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return geo;
+  }, []);
+
+  // 2. Continuous Curving River Mesh Geometry
+  const riverGeo = useMemo(() => {
+    // Generate curved ribbon following getRiverCenter(z)
+    const segments = 60;
+    const geo = new THREE.PlaneGeometry(11, 95, 12, segments);
+    geo.rotateX(-Math.PI / 2);
+
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const z = pos.getZ(i);
+      const riverCenterX = getRiverCenter(z);
+      // Offset lateral X relative to curving river path
+      const currentX = pos.getX(i);
+      pos.setX(i, riverCenterX + currentX);
+      // River water surface elevation sits slightly above riverbed
+      pos.setY(i, 0.95);
+    }
     geo.computeVertexNormals();
     return geo;
   }, []);
 
-  // Procedural tree locations in forest zone
+  // 3. Procedural Trees across the mountain and forest zones
   const trees = useMemo(() => {
-    const list: { pos: [number, number, number]; scale: number; isPine: boolean }[] = [];
-    const seed = 42;
-    for (let i = 0; i < 65; i++) {
-      const x = -35 + ((i * 17 + seed) % 45);
-      const z = -35 + ((i * 23 + seed) % 55);
+    const list: { pos: [number, number, number]; scale: number; species: 'PINE' | 'FIR' | 'BIRCH' }[] = [];
+    const seed = 1337;
 
-      // Avoid putting trees inside river or village houses
+    for (let i = 0; i < 90; i++) {
+      const x = -44 + ((i * 19 + seed) % 65);
+      const z = -44 + ((i * 29 + seed) % 85);
+      const riverCenter = getRiverCenter(z);
+      const distToRiver = Math.abs(x - riverCenter);
+
+      // Avoid placing trees inside river channel or village cluster
+      if (distToRiver > 6.0 && !(x > 14 && z > 0 && z < 26)) {
+        const y = getTerrainHeight(x, z);
+        if (y > 1.2 && y < 18.0) {
+          const species: 'PINE' | 'FIR' | 'BIRCH' = 
+            distToRiver < 10.0 ? 'BIRCH' : (i % 3 === 0 ? 'FIR' : 'PINE');
+          list.push({
+            pos: [x, y, z],
+            scale: 0.85 + ((i % 7) * 0.11),
+            species
+          });
+        }
+      }
+    }
+    return list;
+  }, []);
+
+  // 4. Natural Mossy Boulders scattered along slopes and riverbanks
+  const boulders = useMemo(() => {
+    const list: { pos: [number, number, number]; scale: [number, number, number]; rot: [number, number, number] }[] = [];
+    for (let i = 0; i < 30; i++) {
+      const x = -30 + ((i * 23) % 55);
+      const z = -35 + ((i * 17) % 70);
       const y = getTerrainHeight(x, z);
-      if (y > 1.4 && !(x > 18 && z > 5)) {
+      if (y > 0.8) {
         list.push({
-          pos: [x, y, z],
-          scale: 0.75 + ((i % 5) * 0.12),
-          isPine: x < 5
+          pos: [x, y + 0.3, z],
+          scale: [0.7 + (i % 4) * 0.3, 0.5 + (i % 3) * 0.25, 0.7 + (i % 5) * 0.25],
+          rot: [(i * 0.7) % Math.PI, (i * 1.3) % Math.PI, (i * 0.5) % Math.PI]
         });
       }
     }
     return list;
   }, []);
 
-  // Village houses around the gateway
-  const villageHouses: { pos: [number, number, number]; rot: number; scale: number }[] = [
-    { pos: [22, 1.8, 10], rot: 0.3, scale: 1.1 },
-    { pos: [26, 1.9, 8], rot: -0.2, scale: 1.0 },
-    { pos: [21, 1.7, 18], rot: 0.8, scale: 1.2 },
-    { pos: [32, 2.1, 16], rot: -0.6, scale: 1.05 },
-    { pos: [25, 2.0, 22], rot: 0.1, scale: 0.95 },
-    { pos: [17, 1.6, 14], rot: 0.4, scale: 1.15 }
-  ];
+  // 5. Authentic Himalayan Mountain Village Houses
+  const villageHouses: { pos: [number, number, number]; rot: number; scale: number }[] = useMemo(() => [
+    { pos: [20, getTerrainHeight(20, 10), 10], rot: 0.25, scale: 1.1 },
+    { pos: [25, getTerrainHeight(25, 7), 7], rot: -0.35, scale: 1.05 },
+    { pos: [22, getTerrainHeight(22, 17), 17], rot: 0.6, scale: 1.15 },
+    { pos: [31, getTerrainHeight(31, 15), 15], rot: -0.5, scale: 1.0 },
+    { pos: [26, getTerrainHeight(26, 23), 23], rot: 0.15, scale: 0.95 },
+    { pos: [17, getTerrainHeight(17, 13), 13], rot: 0.45, scale: 1.2 },
+    { pos: [30, getTerrainHeight(30, 24), 24], rot: -0.2, scale: 0.9 },
+    { pos: [16, getTerrainHeight(16, 21), 21], rot: 0.8, scale: 1.0 }
+  ], []);
+
+  // River water ripple animation
+  useFrame((state) => {
+    if (waterRef.current) {
+      const time = state.clock.getElapsedTime();
+      // Subtle organic wave undulation
+      waterRef.current.position.y = 0.95 + Math.sin(time * 1.5) * 0.04;
+    }
+  });
+
+  // Calculate bridge position crossing the river near village entrance (Z = 6)
+  const bridgeZ = 6;
+  const bridgeX = getRiverCenter(bridgeZ);
+  const bridgeY = getTerrainHeight(bridgeX, bridgeZ);
 
   return (
     <group>
-      {/* Procedural Main Terrain Mesh */}
+      {/* 1. PHOTOREALISTIC PROCEDURAL MOUNTAIN TERRAIN */}
       <mesh geometry={terrainGeo} receiveShadow castShadow>
-        <meshStandardMaterial vertexColors roughness={0.88} metalness={0.05} />
-      </mesh>
-
-      {/* River Flow Water Plane */}
-      <mesh position={[-6, 0.85, 2]} rotation={[-Math.PI / 2, 0, 0.45]} receiveShadow>
-        <planeGeometry args={[14, 75]} />
         <meshStandardMaterial 
-          color="#0284c7" 
-          roughness={0.2} 
-          metalness={0.4} 
-          transparent 
-          opacity={0.82} 
+          vertexColors 
+          roughness={0.92} 
+          metalness={0.06} 
+          flatShading={false} 
         />
       </mesh>
 
-      {/* Village Dirt Trail / Road */}
-      <mesh position={[18, 1.6, 15]} rotation={[-Math.PI / 2, 0, -0.2]} receiveShadow>
-        <planeGeometry args={[3.2, 35]} />
-        <meshStandardMaterial color="#574837" roughness={0.95} />
+      {/* 2. REALISTIC ANIMATED CURVING MEANDERING RIVER */}
+      <mesh 
+        ref={waterRef} 
+        geometry={riverGeo} 
+        receiveShadow
+      >
+        <meshStandardMaterial 
+          color="#0891b2" 
+          roughness={0.08} 
+          metalness={0.55} 
+          transparent 
+          opacity={0.88} 
+          depthWrite={false}
+        />
       </mesh>
 
-      {/* Ridge Trail */}
-      <mesh position={[-20, 6.2, -22]} rotation={[-Math.PI / 2, 0, 0.6]} receiveShadow>
-        <planeGeometry args={[2.0, 30]} />
-        <meshStandardMaterial color="#4a4238" roughness={0.95} />
+      {/* 3. TIMBER TRUSS ROAD BRIDGE OVER RIVER */}
+      <RiverBridge 
+        position={[bridgeX, bridgeY + 0.2, bridgeZ]} 
+        rotationY={0.35} 
+      />
+
+      {/* 4. MAIN GRAVEL ROAD (Connecting Village to Bridge and Forest Trails) */}
+      <mesh 
+        position={[18, 1.8, 12]} 
+        rotation={[-Math.PI / 2, 0, -0.3]} 
+        receiveShadow
+      >
+        <planeGeometry args={[3.2, 38]} />
+        <meshStandardMaterial color="#574635" roughness={0.96} />
       </mesh>
 
-      {/* Forest Trees */}
+      {/* 5. MOUNTAIN FOREST CONIFER TREES */}
       {trees.map((t, idx) => (
-        <Tree key={`tree-${idx}`} position={t.pos} scale={t.scale} isPine={t.isPine} />
+        <ConiferTree 
+          key={`conifer-${idx}`} 
+          position={t.pos} 
+          scale={t.scale} 
+          species={t.species} 
+        />
       ))}
 
-      {/* Village Houses */}
+      {/* 6. MOSSY BOULDERS & RIVERBANK STONES */}
+      {boulders.map((b, idx) => (
+        <Boulder 
+          key={`boulder-${idx}`} 
+          position={b.pos} 
+          scale={b.scale} 
+          rotation={b.rot} 
+        />
+      ))}
+
+      {/* 7. AUTHENTIC HIMALAYAN VILLAGE HOUSES */}
       {villageHouses.map((h, idx) => (
-        <House key={`house-${idx}`} position={h.pos} rotationY={h.rot} scale={h.scale} />
+        <MountainHouse 
+          key={`house-${idx}`} 
+          position={h.pos} 
+          rotationY={h.rot} 
+          scale={h.scale} 
+        />
       ))}
 
-      {/* Grid Floor for Digital-Twin Wireframe Aesthetic at base */}
-      <gridHelper args={[84, 42, '#0891b2', '#1e293b']} position={[0, 0.05, 0]} />
+      {/* 8. RUSTIC TIMBER FENCES AROUND PASTURE */}
+      <group position={[23, getTerrainHeight(23, 14), 14]} rotation={[0, 0.4, 0]}>
+        <mesh position={[0, 0.35, 0]} castShadow>
+          <boxGeometry args={[8.0, 0.08, 0.08]} />
+          <meshStandardMaterial color="#3b2716" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.65, 0]} castShadow>
+          <boxGeometry args={[8.0, 0.08, 0.08]} />
+          <meshStandardMaterial color="#3b2716" roughness={0.9} />
+        </mesh>
+        {[-3.6, -1.8, 0, 1.8, 3.6].map((px, i) => (
+          <mesh key={`fence-post-${i}`} position={[px, 0.45, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.08, 0.9, 6]} />
+            <meshStandardMaterial color="#2d1c0f" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 };

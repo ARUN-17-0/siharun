@@ -1,5 +1,5 @@
 import { SensorData, TemporalFeatures, NodeHealth, ScenarioType, CameraEvidence } from '../types';
-import { NodePositionDefinition, calculateDistance3D } from './NodePhysics';
+import { NodePositionDefinition, calculateDistance3D, getTerrainHeight } from './NodePhysics';
 
 // Baseline nominal sensor values for clean mountain forest conditions
 export function createBaselineSensorData(def: NodePositionDefinition): SensorData {
@@ -53,15 +53,15 @@ export function createInitialNodeHealth(nodeId: number): NodeHealth {
 }
 
 // Epicenter targets for the 3 Core Disaster Scenarios
-// Accurate surface elevations on the mountain terrain
+// Dynamically synchronized with exact surface elevations on the mountain terrain
 export const HAZARD_EPICENTERS: Record<ScenarioType, [number, number, number]> = {
   NORMAL: [0, 0, 0],
-  FIRE: [-22, 11.5, -23],          // Mountain ridge near Node 1 & Node 2
-  FLOOD: [-10, 1.2, 0],            // In River Valley near Node 4 & Node 5
-  LANDSLIDE: [-24, 11.8, -20],      // On steep mountain slope right next to Node 1
-  MASTER_FAILURE: [-26, 15.9, -22], // Node 1
-  MASTER_HANDOVER: [-26, 15.9, -22],// Node 1
-  COMPLETE_DEMO: [-22, 11.5, -23]   // Starts with Fire
+  FIRE: [-22, Math.round((getTerrainHeight(-22, -23) + 0.5) * 10) / 10, -23],          // Mountain ridge near Node 1 & Node 2
+  FLOOD: [-8, 0.8, 2],                                                                  // In River Valley near Node 4 & Node 5
+  LANDSLIDE: [-24, Math.round((getTerrainHeight(-24, -20) + 0.5) * 10) / 10, -20],      // On steep mountain slope right next to Node 1
+  MASTER_FAILURE: [-26, Math.round((getTerrainHeight(-26, -22) + 3.2) * 10) / 10, -22], // Node 1
+  MASTER_HANDOVER: [-26, Math.round((getTerrainHeight(-26, -22) + 3.2) * 10) / 10, -22],// Node 1
+  COMPLETE_DEMO: [-22, Math.round((getTerrainHeight(-22, -23) + 0.5) * 10) / 10, -23]   // Starts with Fire
 };
 
 /**

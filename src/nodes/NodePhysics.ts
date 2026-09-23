@@ -11,21 +11,65 @@ export interface NodePositionDefinition {
   description: string;
 }
 
-// Elevation mathematical function for the landscape
-// Mountain ridge on west/north, river valley in center, village plateau on east
+// Smooth interpolation helper for fractal terrain
+function smoothNoise(x: number, z: number): number {
+  const i = Math.floor(x);
+  const j = Math.floor(z);
+  const fx = x - i;
+  const fz = z - j;
+  const sx = fx * fx * (3 - 2 * fx);
+  const sz = fz * fz * (3 - 2 * fz);
+
+  const n00 = Math.sin(i * 12.9898 + j * 78.233) * 0.5 + 0.5;
+  const n10 = Math.sin((i + 1) * 12.9898 + j * 78.233) * 0.5 + 0.5;
+  const n01 = Math.sin(i * 12.9898 + (j + 1) * 78.233) * 0.5 + 0.5;
+  const n11 = Math.sin((i + 1) * 12.9898 + (j + 1) * 78.233) * 0.5 + 0.5;
+
+  const ix0 = n00 * (1 - sx) + n10 * sx;
+  const ix1 = n01 * (1 - sx) + n11 * sx;
+  return ix0 * (1 - sz) + ix1 * sz;
+}
+
+// Multi-octave Fractal Brownian Motion (FBM)
+export function fbmNoise(x: number, z: number, octaves = 4): number {
+  let val = 0;
+  let amp = 1;
+  let freq = 1;
+  let max = 0;
+  for (let o = 0; o < octaves; o++) {
+    val += smoothNoise(x * freq, z * freq) * amp;
+    max += amp;
+    amp *= 0.5;
+    freq *= 2.0;
+  }
+  return val / max;
+}
+
+// Natural meandering river center coordinate along Z
+export function getRiverCenter(z: number): number {
+  return -10 + Math.sin(z * 0.07) * 5.0 + (z + 20) * 0.35;
+}
+
+// Photorealistic Mountain & River Valley Elevation Model
 export function getTerrainHeight(x: number, z: number): number {
-  const mountainFactor = Math.max(0, (-x * 0.4 - z * 0.35 + 5) / 18);
-  const mountainHeight = Math.pow(mountainFactor, 1.6) * 8.5;
+  // 1. Primary mountain mass on West/Northwest with ridged fractal crags
+  const mountainFactor = Math.max(0, (-x * 0.38 - z * 0.32 + 4) / 16);
+  const ridgeNoise = 1 - Math.abs(fbmNoise(x * 0.08 + 12, z * 0.08 + 44, 3) * 2 - 1);
+  const mountainHeight = Math.pow(mountainFactor, 1.5) * (8.0 + ridgeNoise * 4.5);
 
-  const valleyCenter = -12 + (z + 20) * 0.5;
-  const distToRiver = Math.abs(x - valleyCenter);
-  const riverTrough = Math.max(0, 1 - distToRiver / 8) * 3.2;
+  // 2. Natural curving riverbed trough
+  const riverCenter = getRiverCenter(z);
+  const distToRiver = Math.abs(x - riverCenter);
+  const riverTrough = Math.max(0, 1 - distToRiver / 6.5) * 3.4;
 
-  const undulation = Math.sin(x * 0.12) * Math.cos(z * 0.1) * 1.2;
-  const villagePlateau = (x > 10 && z > -5 && z < 25) ? 1.5 : 0;
+  // 3. Gentle meadow and forest rolling hills
+  const hills = (fbmNoise(x * 0.06, z * 0.06, 2) - 0.5) * 2.2;
 
-  const rawHeight = mountainHeight - riverTrough + undulation + villagePlateau;
-  return Math.max(0.2, rawHeight);
+  // 4. Village plateau on East
+  const villagePlateau = (x > 8 && z > -8 && z < 28) ? 1.6 : 0;
+
+  const rawHeight = mountainHeight - riverTrough + hills + villagePlateau;
+  return Math.max(0.25, Math.round(rawHeight * 100) / 100);
 }
 
 // Village Gateway location (Node 0)
@@ -39,7 +83,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 1,
     name: "Mountain Tree Post N1 (Master)",
     zone: "FOREST_UPPER",
-    position3D: [-26, Math.round((getTerrainHeight(-26, -22) + 3.2) * 10) / 10, -22], // ~15.9m (Tree-mounted)
+    position3D: [-26, Math.round((getTerrainHeight(-26, -22) + 3.2) * 10) / 10, -22], // ~19.8m (Tree-mounted)
     gps: { lat: 30.1652, lng: 79.1021, alt: 1890 },
     description: "High mountain tree-mounted observation post on forest ridge. Line-of-sight LoRa backbone."
   },
@@ -47,7 +91,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 2,
     name: "North Canopy N2",
     zone: "FOREST_UPPER",
-    position3D: [-12, Math.round((getTerrainHeight(-12, -26) + 0.3) * 10) / 10, -26], // ~8.5m
+    position3D: [-12, Math.round((getTerrainHeight(-12, -26) + 0.3) * 10) / 10, -26], // ~11.0m
     gps: { lat: 30.1685, lng: 79.1143, alt: 1840 },
     description: "Dense pine canopy monitor for forest thermal & combustible smoke signatures."
   },
@@ -55,7 +99,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 3,
     name: "West Escarpment N3",
     zone: "FOREST_UPPER",
-    position3D: [-32, Math.round((getTerrainHeight(-32, -8) + 0.3) * 10) / 10, -8], // ~11.4m
+    position3D: [-32, Math.round((getTerrainHeight(-32, -8) + 0.3) * 10) / 10, -8], // ~16.1m
     gps: { lat: 30.1580, lng: 79.0965, alt: 1795 },
     description: "Western cliff boundary monitor for wildfires and gust winds."
   },
@@ -63,7 +107,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 4,
     name: "River Weir N4",
     zone: "RIVER_VALLEY",
-    position3D: [-14, Math.round((getTerrainHeight(-14, -4) + 0.3) * 10) / 10, -4], // ~3.6m
+    position3D: [-14, Math.round((getTerrainHeight(-14, -4) + 0.3) * 10) / 10, -4], // ~6.0m
     gps: { lat: 30.1520, lng: 79.1118, alt: 1460 },
     description: "Catchment basin and hydrologic telemetry station with ultrasonic water level sensor."
   },
@@ -71,7 +115,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 5,
     name: "Valley Culvert N5",
     zone: "RIVER_VALLEY",
-    position3D: [-2, Math.round((getTerrainHeight(-2, 8) + 0.3) * 10) / 10, 8], // ~0.5m
+    position3D: [-2, Math.round((getTerrainHeight(-2, 8) + 0.3) * 10) / 10, 8], // ~0.55m
     gps: { lat: 30.1462, lng: 79.1215, alt: 1435 },
     description: "Downstream gorge bottleneck for flash-flood surge detection."
   },
@@ -79,7 +123,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 6,
     name: "Slope Geophone N6",
     zone: "SLOPE_RIDGE",
-    position3D: [-20, Math.round((getTerrainHeight(-20, 16) + 0.3) * 10) / 10, 16], // ~2.4m
+    position3D: [-20, Math.round((getTerrainHeight(-20, 16) + 0.3) * 10) / 10, 16], // ~3.6m
     gps: { lat: 30.1408, lng: 79.1054, alt: 1680 },
     description: "Steep shale embankment with dual-axis tiltmeters and seismometers for landslide shear."
   },
@@ -87,7 +131,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 7,
     name: "Rock Terrace N7",
     zone: "SLOPE_RIDGE",
-    position3D: [-8, Math.round((getTerrainHeight(-8, 22) + 0.3) * 10) / 10, 22], // ~0.9m
+    position3D: [-8, Math.round((getTerrainHeight(-8, 22) + 0.3) * 10) / 10, 22], // ~0.6m
     gps: { lat: 30.1384, lng: 79.1170, alt: 1640 },
     description: "Solid bedrock terrace with high solar insolation. High battery capacity candidate."
   },
@@ -95,7 +139,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 8,
     name: "Forest Trail N8",
     zone: "VILLAGE_APPROACH",
-    position3D: [8, Math.round((getTerrainHeight(8, -10) + 0.3) * 10) / 10, -10], // ~2.0m
+    position3D: [8, Math.round((getTerrainHeight(8, -10) + 0.3) * 10) / 10, -10], // ~1.3m
     gps: { lat: 30.1555, lng: 79.1302, alt: 1510 },
     description: "Main timber trail and agricultural transition point with particulate air monitor."
   },
@@ -103,7 +147,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 9,
     name: "Village Border N9",
     zone: "VILLAGE_APPROACH",
-    position3D: [15, Math.round((getTerrainHeight(15, 6) + 0.3) * 10) / 10, 6], // ~2.8m
+    position3D: [15, Math.round((getTerrainHeight(15, 6) + 0.3) * 10) / 10, 6], // ~2.0m
     gps: { lat: 30.1478, lng: 79.1264, alt: 1445 },
     description: "Village entrance bridge relay node. Direct line-of-sight to Village Gateway."
   },
@@ -111,7 +155,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 10,
     name: "Hill Relay N10",
     zone: "VILLAGE_APPROACH",
-    position3D: [21, Math.round((getTerrainHeight(21, -4) + 0.3) * 10) / 10, -4], // ~2.4m
+    position3D: [21, Math.round((getTerrainHeight(21, -4) + 0.3) * 10) / 10, -4], // ~2.1m
     gps: { lat: 30.1512, lng: 79.1330, alt: 1490 },
     description: "Commanding village hill relay node with dedicated redundant antenna."
   }

@@ -58,81 +58,189 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
 
   return (
     <group position={[gx, gy, gz]}>
-      {/* Base Concrete Foundation */}
-      <mesh position={[0, 0.25, 0]} receiveShadow castShadow>
-        <boxGeometry args={[3.2, 0.5, 3.2]} />
-        <meshStandardMaterial color="#475569" roughness={0.9} metalness={0.2} />
+      {/* Base Concrete Foundation with Chamfered Edges */}
+      <mesh position={[0, 0.2, 0]} receiveShadow castShadow>
+        <boxGeometry args={[3.8, 0.4, 3.8]} />
+        <meshStandardMaterial color="#475569" roughness={0.88} metalness={0.2} />
+      </mesh>
+      {/* Perimeter Safety Curb */}
+      <mesh position={[0, 0.42, 0]} receiveShadow>
+        <boxGeometry args={[3.6, 0.08, 3.6]} />
+        <meshStandardMaterial color="#334155" roughness={0.8} />
       </mesh>
 
-      {/* Communications Shelter */}
-      <mesh position={[-0.8, 1.15, -0.6]} castShadow receiveShadow>
-        <boxGeometry args={[1.4, 1.3, 1.4]} />
-        <meshStandardMaterial color="#cbd5e1" roughness={0.4} metalness={0.3} />
-      </mesh>
-
-      {/* Steel Communications Tower */}
-      <group position={[0.7, 0.5, 0.7]}>
-        <mesh position={[0, 3.2, 0]} castShadow>
-          <cylinderGeometry args={[0.25, 0.65, 6.4, 4]} />
-          <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.3} wireframe />
+      {/* Dual Weatherproof Telecom & Battery Enclosure Cabinets */}
+      <group position={[-0.9, 0.95, -0.6]}>
+        {/* Main Cabinet */}
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[1.3, 1.3, 1.1]} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.35} metalness={0.4} />
         </mesh>
-
-        <mesh position={[0, 3.6, 0]}>
-          <cylinderGeometry args={[0.08, 0.12, 7.2, 8]} />
-          <meshStandardMaterial color="#334155" metalness={0.9} />
+        {/* Louvered Ventilation Panel */}
+        <mesh position={[0, 0.35, 0.56]}>
+          <planeGeometry args={[0.9, 0.3]} />
+          <meshStandardMaterial color="#475569" roughness={0.6} />
         </mesh>
+        {/* Front Door Seam & Handle */}
+        <mesh position={[0.42, 0, 0.56]}>
+          <boxGeometry args={[0.04, 0.18, 0.02]} />
+          <meshStandardMaterial color="#0f172a" metalness={0.8} />
+        </mesh>
+        {/* Solar Power Inverter Box Mounted on Side */}
+        <mesh position={[0.68, 0.1, 0]}>
+          <boxGeometry args={[0.08, 0.6, 0.4]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.4} metalness={0.5} />
+        </mesh>
+      </group>
 
-        {/* Satellite Dish */}
-        <group ref={dishRef} position={[0, 5.2, 0.2]}>
-          <mesh rotation={[0.4, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.9, 0.08, 0.25, 16, 1, true]} />
-            <meshStandardMaterial color="#f1f5f9" roughness={0.3} metalness={0.4} side={THREE.DoubleSide} />
+      {/* Dual Monocrystalline Solar Panels on Angle Framework */}
+      <group position={[-0.9, 1.85, 0.7]} rotation={[0.45, 0, 0]}>
+        <mesh position={[0, 0, 0]} castShadow>
+          <boxGeometry args={[1.6, 0.05, 0.9]} />
+          <meshStandardMaterial color="#091428" roughness={0.15} metalness={0.85} emissive="#1e3a8a" emissiveIntensity={0.2} />
+        </mesh>
+        <mesh position={[0, -0.2, -0.3]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.45, 8]} />
+          <meshStandardMaterial color="#64748b" metalness={0.85} />
+        </mesh>
+      </group>
+
+      {/* Realistic Triangular Lattice Telecommunications Tower */}
+      <group position={[0.8, 0.4, 0.6]}>
+        {/* 3 Main Galvanized Steel Tubular Legs */}
+        {[0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].map((angle, i) => {
+          const rBase = 0.55;
+          const rTop = 0.22;
+          const xB = Math.cos(angle) * rBase;
+          const zB = Math.sin(angle) * rBase;
+          const xT = Math.cos(angle) * rTop;
+          const zT = Math.sin(angle) * rTop;
+          return (
+            <mesh 
+              key={`leg-${i}`} 
+              position={[(xB + xT) / 2, 3.5, (zB + zT) / 2]} 
+              rotation={[(zB - zT) * 0.15, 0, -(xB - xT) * 0.15]}
+              castShadow
+            >
+              <cylinderGeometry args={[0.035, 0.045, 7.0, 8]} />
+              <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.25} />
+            </mesh>
+          );
+        })}
+
+        {/* 4 Height Levels of Horizontal & Diagonal Lattice Braces */}
+        {[1.4, 2.8, 4.2, 5.6].map((tierY, idx) => (
+          <group key={`tier-${idx}`} position={[0, tierY, 0]}>
+            {/* Triangular Ring Collar */}
+            <mesh rotation={[0, Math.PI / 6, 0]}>
+              <cylinderGeometry args={[0.42 - idx * 0.06, 0.46 - idx * 0.06, 0.06, 3, 1, true]} />
+              <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Top Platform / Crow's Nest Gallery */}
+        <group position={[0, 7.0, 0]}>
+          <mesh receiveShadow>
+            <cylinderGeometry args={[0.45, 0.45, 0.08, 6]} />
+            <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.3} />
           </mesh>
-          <mesh position={[0, 0.1, 0.45]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
-            <meshStandardMaterial color="#0284c7" metalness={0.8} />
+          {/* Railing */}
+          <mesh position={[0, 0.22, 0]}>
+            <cylinderGeometry args={[0.44, 0.44, 0.4, 6, 1, true]} />
+            <meshStandardMaterial color="#64748b" metalness={0.85} wireframe />
           </mesh>
         </group>
 
-        {/* Antenna Mast & Siren Strobe */}
-        <group position={[0, 6.8, 0]}>
-          <mesh position={[0, 0.9, 0]} castShadow>
-            <cylinderGeometry args={[0.04, 0.04, 1.8, 8]} />
-            <meshStandardMaterial color="#f8fafc" metalness={0.6} />
+        {/* Parabolic Mesh Satellite / Relay Dish */}
+        <group ref={dishRef} position={[0, 5.4, 0.25]}>
+          <mesh rotation={[0.35, 0, 0]} castShadow>
+            <cylinderGeometry args={[1.05, 0.1, 0.28, 18, 1, true]} />
+            <meshStandardMaterial color="#f1f5f9" roughness={0.25} metalness={0.5} side={THREE.DoubleSide} />
+          </mesh>
+          {/* Feed Horn Boom Arm */}
+          <mesh position={[0, 0.12, 0.52]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.025, 0.025, 0.48, 8]} />
+            <meshStandardMaterial color="#0284c7" metalness={0.85} />
+          </mesh>
+        </group>
+
+        {/* Microwave Backhaul Transceiver Drum */}
+        <group position={[0, 4.2, -0.32]} rotation={[0, Math.PI, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.32, 0.32, 0.24, 16]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.2} metalness={0.4} />
+          </mesh>
+        </group>
+
+        {/* Disaster Early Warning 4-Horn Siren Assembly */}
+        <group position={[0, 6.4, 0]}>
+          {[0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2].map((angle, i) => (
+            <mesh 
+              key={`siren-horn-${i}`}
+              position={[Math.cos(angle) * 0.32, 0, Math.sin(angle) * 0.32]} 
+              rotation={[0, -angle, -Math.PI / 2]}
+            >
+              <coneGeometry args={[0.12, 0.3, 10, 1, true]} />
+              <meshStandardMaterial color="#ef4444" metalness={0.6} roughness={0.3} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
+        </group>
+
+        {/* Apex Gateway Collinear Mast & Strobe */}
+        <group position={[0, 7.05, 0]}>
+          {/* Omnidirectional Fiberglass Collinear Repeater Mast */}
+          <mesh position={[0, 1.1, 0]} castShadow>
+            <cylinderGeometry args={[0.035, 0.035, 2.2, 10]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.3} metalness={0.6} />
           </mesh>
 
-          {/* Regular Obstruction Light */}
-          <mesh ref={beaconRef} position={[0, 1.85, 0]}>
-            <sphereGeometry args={[0.1, 12, 12]} />
+          {/* Aviation Obstruction Beacon */}
+          <mesh ref={beaconRef} position={[0, 2.25, 0]}>
+            <sphereGeometry args={[0.11, 14, 14]} />
             <meshStandardMaterial 
               color={online ? "#10b981" : "#ef4444"} 
               emissive={online ? "#10b981" : "#ef4444"} 
-              emissiveIntensity={online ? 3.0 : 0.5} 
+              emissiveIntensity={online ? 3.2 : 0.5} 
             />
           </mesh>
 
-          {/* Emergency Siren Strobe Light (Flashes when disaster detected) */}
+          {/* Emergency Siren Strobe Light (Flashes brightly when warning issued) */}
           <pointLight 
             ref={sirenLightRef} 
-            position={[0, 2.2, 0]} 
+            position={[0, 2.4, 0]} 
             color="#ef4444" 
             intensity={0} 
-            distance={45} 
+            distance={50} 
           />
         </group>
       </group>
 
-      {/* Visual Village Evacuation Transport (Appears and drives to safety) */}
+      {/* Realistic Mountain Evacuation Transport Vehicle */}
       <group ref={evacConvoyRef} visible={false}>
-        {/* Evacuation Bus / Transport */}
-        <mesh position={[0, 0.4, 0]} castShadow>
-          <boxGeometry args={[1.8, 0.8, 0.9]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.3} metalness={0.5} />
+        {/* Chassis Body */}
+        <mesh position={[0, 0.5, 0]} castShadow>
+          <boxGeometry args={[2.4, 0.75, 1.1]} />
+          <meshStandardMaterial color="#f59e0b" roughness={0.35} metalness={0.4} />
         </mesh>
-        {/* Flashing Amber Hazard Light on transport */}
-        <mesh position={[0, 0.85, 0]}>
-          <sphereGeometry args={[0.12, 8, 8]} />
-          <meshStandardMaterial color="#facc15" emissive="#facc15" emissiveIntensity={3.0} />
+        {/* Cab Roof / Windshield */}
+        <mesh position={[-0.2, 0.92, 0]} castShadow>
+          <boxGeometry args={[1.4, 0.45, 1.0]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.8} />
+        </mesh>
+        {/* 4 Off-road Tires */}
+        {[-0.7, 0.7].map((xOff, xi) => (
+          [-0.55, 0.55].map((zOff, zi) => (
+            <mesh key={`wheel-${xi}-${zi}`} position={[xOff, 0.22, zOff]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.24, 0.24, 0.18, 12]} />
+              <meshStandardMaterial color="#171717" roughness={0.9} />
+            </mesh>
+          ))
+        ))}
+        {/* Flashing Amber Warning Roof Beacon */}
+        <mesh position={[-0.2, 1.2, 0]}>
+          <sphereGeometry args={[0.12, 10, 10]} />
+          <meshStandardMaterial color="#facc15" emissive="#facc15" emissiveIntensity={3.5} />
         </mesh>
       </group>
 
