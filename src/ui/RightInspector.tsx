@@ -12,18 +12,25 @@ import {
   Layers, 
   Zap,
   Flame,
-  Mountain
+  Mountain,
+  Gauge,
+  ShieldAlert
 } from 'lucide-react';
-import { NodeState } from '../types';
+import { NodeState, ScenarioType } from '../types';
+import { LiveStationCameraFeed } from './LiveStationCameraFeed';
 
 interface RightInspectorProps {
   selectedNode: NodeState | undefined;
   currentMasterId: number;
+  scenario?: ScenarioType;
+  disasterPhase?: number;
 }
 
 export const RightInspector: React.FC<RightInspectorProps> = ({
   selectedNode,
-  currentMasterId
+  currentMasterId,
+  scenario = 'NORMAL',
+  disasterPhase = 1
 }) => {
   if (!selectedNode) {
     return (
@@ -33,7 +40,7 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
           No Node Selected
         </h3>
         <p className="text-xs text-slate-400 mt-1 max-w-[240px]">
-          Select any sensor node in the 3D digital-twin viewport or the fleet list to inspect its ESP32-S3 sensor suite and edge computing outputs.
+          Select any sensor node in the 3D digital-twin viewport or the fleet list to inspect its ESP32-S3 sensor suite, live surveillance camera feed, and edge computing outputs.
         </p>
       </aside>
     );
@@ -41,6 +48,11 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
 
   const { sensorData, temporalFeatures, aiResult, health } = selectedNode;
   const isMaster = selectedNode.id === currentMasterId;
+
+  // Scientific derived metrics
+  const factorOfSafety = Math.max(0.65, Math.round((1.45 - (sensorData.soilMoisture / 100) * 0.5 - (sensorData.tilt / 30) * 0.4) * 100) / 100);
+  const porePressureKPa = Math.round((sensorData.soilMoisture * 0.65 + sensorData.rainfall * 0.4) * 10) / 10;
+  const riverDischargeM3s = Math.round((sensorData.waterLevel * 48.5) * 10) / 10;
 
   return (
     <aside className="w-96 h-full bg-[#080d18] border-l-2 border-slate-700 flex flex-col z-10 select-none overflow-hidden shadow-2xl">
@@ -90,7 +102,14 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3.5 text-xs font-mono">
         
-        {/* 1. EDGE CLASSIFIER HEADS (3 HAZARDS ONLY) */}
+        {/* 1. REAL-TIME OPTICAL & THERMAL SURVEILLANCE CAMERA FEED */}
+        <LiveStationCameraFeed 
+          node={selectedNode}
+          scenario={scenario}
+          disasterPhase={disasterPhase}
+        />
+
+        {/* 2. EDGE CLASSIFIER HEADS (3 HAZARDS ONLY) */}
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase">
@@ -160,42 +179,82 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Aggregate Severity & Hysteresis Lock */}
-          <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-bold">
-            <div>
-              <span className="text-slate-400">Total Threat Severity: </span>
-              <strong className={aiResult.severity > 65 ? 'text-red-400 text-sm' : 'text-white text-sm'}>
-                {aiResult.severity}%
-              </strong>
-            </div>
-            {aiResult.hysteresisLocked && (
-              <span className="bg-slate-800 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500 text-[9px]">
-                Hysteresis Filtered
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* 2. ESP32-S3 SENSOR TELEMETRY SUITE */}
+        {/* 3. SCIENTIFIC GEOTECHNICAL & HYDROLOGICAL METRICS (CWC & USGS STANDARDS) */}
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
           <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase mb-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <span>Hardware Sensor Streams</span>
+            <Gauge className="w-4 h-4 text-emerald-400" />
+            <span>Disaster Physics Telemetry</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-[10px]">
-            {/* Temperature */}
+            {/* Hydrograph or Geotechnical based on zone */}
+            {selectedNode.zone === 'RIVER_VALLEY' ? (
+              <>
+                <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div className="text-slate-400">River Discharge</div>
+                  <div className="text-cyan-300 font-black text-xs mt-0.5">{riverDischargeM3s} m³/s</div>
+                  <div className="text-[9px] text-slate-500">CWC Threshold: 160 m³/s</div>
+                </div>
+                <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div className="text-slate-400">Stage Gauge</div>
+                  <div className={`font-black text-xs mt-0.5 ${sensorData.waterLevel > 2.5 ? 'text-red-400' : 'text-white'}`}>
+                    {sensorData.waterLevel} m MSL
+                  </div>
+                  <div className="text-[9px] text-slate-500">Danger: 3.2m</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div className="text-slate-400">Factor of Safety (Fs)</div>
+                  <div className={`font-black text-xs mt-0.5 ${factorOfSafety < 1.0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {factorOfSafety} {factorOfSafety < 1.0 ? '(SLIP)' : '(STABLE)'}
+                  </div>
+                  <div className="text-[9px] text-slate-500">Critical: &lt; 1.00</div>
+                </div>
+                <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div className="text-slate-400">Pore Pressure (u)</div>
+                  <div className="text-amber-300 font-black text-xs mt-0.5">{porePressureKPa} kPa</div>
+                  <div className="text-[9px] text-slate-500">TDR Piezometer</div>
+                </div>
+              </>
+            )}
+
+            {/* Fire Weather Index or Geophone Vibration */}
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
+              <div className="text-slate-400">Combustible Gas / VOC</div>
+              <div className="text-amber-400 font-black text-xs mt-0.5">{sensorData.smokeGas} ppm</div>
+              <div className="text-[9px] text-slate-500">MQ-2 NDIR Array</div>
+            </div>
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
+              <div className="text-slate-400">Geophone Vibration</div>
+              <div className="text-cyan-400 font-black text-xs mt-0.5">{sensorData.vibration} mm/s</div>
+              <div className="text-[9px] text-slate-500">Seismic Trigger</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. SENSOR HARDWARE SUITE */}
+        <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase mb-2">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span>Environmental Sensor Suite</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* Ambient Temp */}
             <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
-                <span>Temperature</span>
+                <span>Temp</span>
                 <Thermometer className="w-3.5 h-3.5 text-red-400" />
               </div>
               <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.temperature}°C
               </div>
-              <div className="text-[9px] text-slate-400">
-                Rate: {temporalFeatures.rateOfChange.temperatureRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.temperatureRate}°C/min
+              <div className="text-[9px] text-slate-500">
+                Rate: {temporalFeatures.rateOfChange.temperatureRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.temperatureRate}°C/m
               </div>
             </div>
 
@@ -208,40 +267,12 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
               <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.humidity}% RH
               </div>
-              <div className="text-[9px] text-slate-400">
+              <div className="text-[9px] text-slate-500">
                 Capacitive Sensor
               </div>
             </div>
 
-            {/* Smoke / Gas */}
-            <div className="bg-slate-950 p-2 rounded border border-slate-800">
-              <div className="text-slate-400 flex items-center justify-between">
-                <span>Combustible Gas</span>
-                <Wind className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <div className="text-white font-black text-sm mt-0.5">
-                {sensorData.smokeGas} ppm
-              </div>
-              <div className="text-[9px] text-slate-400">
-                MQ-2 Sensor Array
-              </div>
-            </div>
-
-            {/* Particulates PM2.5 / PM10 */}
-            <div className="bg-slate-950 p-2 rounded border border-slate-800">
-              <div className="text-slate-400 flex items-center justify-between">
-                <span>PM2.5 / PM10</span>
-                <Activity className="w-3.5 h-3.5 text-yellow-400" />
-              </div>
-              <div className="text-white font-black text-sm mt-0.5">
-                {sensorData.pm25} / {sensorData.pm10}
-              </div>
-              <div className="text-[9px] text-slate-400">
-                µg/m³ Laser Scatter
-              </div>
-            </div>
-
-            {/* Rainfall Rate */}
+            {/* Precipitation */}
             <div className="bg-slate-950 p-2 rounded border border-slate-800">
               <div className="text-slate-400 flex items-center justify-between">
                 <span>Precipitation</span>
@@ -250,7 +281,7 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
               <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.rainfall} mm/h
               </div>
-              <div className="text-[9px] text-slate-400">
+              <div className="text-[9px] text-slate-500">
                 Cumul: {temporalFeatures.cumulativeRainfall}mm
               </div>
             </div>
@@ -264,64 +295,14 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
               <div className="text-white font-black text-sm mt-0.5">
                 {sensorData.soilMoisture}%
               </div>
-              <div className="text-[9px] text-slate-400">
-                TDR Probe
-              </div>
-            </div>
-
-            {/* Water Level */}
-            <div className="bg-slate-950 p-2 rounded border border-slate-800">
-              <div className="text-slate-400 flex items-center justify-between">
-                <span>Water Level</span>
-                <Activity className="w-3.5 h-3.5 text-blue-400" />
-              </div>
-              <div className="text-white font-black text-sm mt-0.5">
-                {sensorData.waterLevel} m
-              </div>
-              <div className="text-[9px] text-slate-400">
-                Rise: {temporalFeatures.rateOfChange.waterLevelRiseRate > 0 ? '+' : ''}{temporalFeatures.rateOfChange.waterLevelRiseRate}m/min
-              </div>
-            </div>
-
-            {/* Tilt / Inclination */}
-            <div className="bg-slate-950 p-2 rounded border border-slate-800">
-              <div className="text-slate-400 flex items-center justify-between">
-                <span>Tilt & Vibration</span>
-                <Compass className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <div className="text-white font-black text-sm mt-0.5">
-                {sensorData.tilt}° / {sensorData.vibration}g
-              </div>
-              <div className="text-[9px] text-slate-400">
-                MPU-6050 Accelerometer
-              </div>
-            </div>
-          </div>
-
-          {/* Camera Edge Confidence */}
-          <div className="mt-2.5 pt-2 border-t border-slate-800">
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 font-bold mb-1.5">
-              <Camera className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Camera Vision Feature Confidence:</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
-              <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
-                <div className="text-slate-400 text-[9px]">Flame Plume</div>
-                <div className="font-black text-red-400">{(sensorData.camera.fireConfidence * 100).toFixed(0)}%</div>
-              </div>
-              <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
-                <div className="text-slate-400 text-[9px]">Catchment Surge</div>
-                <div className="font-black text-cyan-400">{(sensorData.camera.floodConfidence * 100).toFixed(0)}%</div>
-              </div>
-              <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
-                <div className="text-slate-400 text-[9px]">Slope Debris</div>
-                <div className="font-black text-amber-400">{(sensorData.camera.debrisConfidence * 100).toFixed(0)}%</div>
+              <div className="text-[9px] text-slate-500">
+                Volumetric VWC
               </div>
             </div>
           </div>
         </div>
 
-        {/* 3. 443MHz LORA ROUTING & MULTI-HOP PATH */}
+        {/* 5. 443MHz LORAWAN MESH ROUTING & PHYSICAL LAYER */}
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
           <div className="flex items-center gap-1.5 text-white font-black text-[11px] uppercase mb-2">
             <Radio className="w-4 h-4 text-cyan-400" />
@@ -337,7 +318,7 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
             </div>
 
             <div>
-              <span className="text-slate-400 block mb-0.5">Full Multi-Hop Route to Gateway:</span>
+              <span className="text-slate-400 block mb-0.5">Multi-Hop Path to Gateway:</span>
               <div className="bg-slate-950 p-1.5 rounded border border-slate-800 text-white font-bold flex items-center gap-1 flex-wrap">
                 {selectedNode.routeToGateway.map((id, idx) => (
                   <span key={`p-${idx}`} className="flex items-center gap-1">
@@ -358,14 +339,23 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-between pt-1 border-t border-slate-800">
-              <span className="text-slate-400">Master Candidate Score:</span>
-              <span className="text-amber-400 font-bold">{selectedNode.electionScore} pts</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-slate-400">Transmitted Packets:</span>
-              <span className="text-white font-bold">{selectedNode.transmittedPackets} pkts</span>
+            <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-800">
+              <div className="flex justify-between text-slate-400">
+                <span>Modulation:</span>
+                <span className="text-white font-bold">SF7 / 125kHz</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Carrier:</span>
+                <span className="text-white font-bold">443.50 MHz</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>RF Signal:</span>
+                <span className="text-emerald-400 font-bold">-88 dBm</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>SNR Ratio:</span>
+                <span className="text-emerald-400 font-bold">+8.4 dB</span>
+              </div>
             </div>
           </div>
         </div>

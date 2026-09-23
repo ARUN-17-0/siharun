@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Radio, 
   Cpu, 
@@ -6,14 +6,17 @@ import {
   Crown,
   ShieldCheck,
   AlertTriangle,
-  Users
+  Users,
+  Volume2,
+  VolumeX,
+  Compass
 } from 'lucide-react';
 import { NetworkState } from '../types';
 
 interface TopNavigationProps {
   network: NetworkState;
-  onCameraPreset: (preset: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV') => void;
-  activeCamera: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV';
+  onCameraPreset: (preset: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'STATION_POV') => void;
+  activeCamera: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'STATION_POV';
 }
 
 export const TopNavigation: React.FC<TopNavigationProps> = ({
@@ -21,6 +24,62 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
   onCameraPreset,
   activeCamera
 }) => {
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const oscRef = useRef<OscillatorNode | null>(null);
+
+  // Web Audio API Emergency Siren Synthesizer
+  useEffect(() => {
+    const isWarning = network.evacuationState === 'WARNING_ISSUED' || network.evacuationState === 'EVACUATING';
+
+    if (!audioEnabled || !isWarning) {
+      if (oscRef.current) {
+        try { oscRef.current.stop(); } catch (_) {}
+        oscRef.current.disconnect();
+        oscRef.current = null;
+      }
+      return;
+    }
+
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioCtx();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      if (!oscRef.current) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        gain.gain.value = 0.04; // Low background volume
+
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(620, now);
+        for (let i = 0; i < 40; i++) {
+          osc.frequency.linearRampToValueAtTime(880, now + i * 1.6 + 0.8);
+          osc.frequency.linearRampToValueAtTime(620, now + i * 1.6 + 1.6);
+        }
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        oscRef.current = osc;
+      }
+    } catch (_) {}
+
+    return () => {
+      if (oscRef.current) {
+        try { oscRef.current.stop(); } catch (_) {}
+        oscRef.current.disconnect();
+        oscRef.current = null;
+      }
+    };
+  }, [audioEnabled, network.evacuationState]);
+
   const getScenarioBadge = () => {
     switch (network.scenario) {
       case 'NORMAL':
@@ -103,6 +162,20 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
         {/* Village Evacuation Monitor */}
         {getEvacuationBadge()}
 
+        {/* Emergency Audio Siren Toggle */}
+        <button
+          onClick={() => setAudioEnabled(!audioEnabled)}
+          title={audioEnabled ? "Disable Siren Sound" : "Enable Emergency Audio Siren"}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border-2 transition-all ${
+            audioEnabled 
+              ? 'bg-amber-600 text-white border-amber-300 shadow-md animate-pulse' 
+              : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
+          }`}
+        >
+          {audioEnabled ? <Volume2 className="w-3.5 h-3.5 text-white" /> : <VolumeX className="w-3.5 h-3.5 text-slate-400" />}
+          <span className="text-[10px] font-bold uppercase">{audioEnabled ? 'SIREN ON' : 'SIREN OFF'}</span>
+        </button>
+
         {/* Active Nodes */}
         <div className="flex items-center gap-2 bg-slate-900 border-2 border-slate-700 px-3 py-1.5 rounded-md">
           <Cpu className="w-4 h-4 text-cyan-400" />
@@ -136,7 +209,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           </div>
         </div>
 
-        {/* Camera Preset Buttons */}
+        {/* Camera Preset Buttons (3D Twin, Station POV, GIS Topo Map) */}
         <div className="flex items-center bg-slate-900 border-2 border-slate-700 p-0.5 rounded-md text-[11px]">
           <button
             onClick={() => onCameraPreset('ISOMETRIC')}
@@ -144,7 +217,15 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
               activeCamera === 'ISOMETRIC' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
             }`}
           >
-            Isometric
+            3D Twin
+          </button>
+          <button
+            onClick={() => onCameraPreset('STATION_POV')}
+            className={`px-2.5 py-1 rounded transition-colors ${
+              activeCamera === 'STATION_POV' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            Station POV
           </button>
           <button
             onClick={() => onCameraPreset('TOP_DOWN')}
@@ -152,15 +233,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
               activeCamera === 'TOP_DOWN' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
             }`}
           >
-            Top-Down
-          </button>
-          <button
-            onClick={() => onCameraPreset('GATEWAY_POV')}
-            className={`px-2.5 py-1 rounded transition-colors ${
-              activeCamera === 'GATEWAY_POV' ? 'bg-cyan-600 text-white font-black' : 'text-slate-300 hover:text-white'
-            }`}
-          >
-            Gateway POV
+            GIS Topo
           </button>
         </div>
       </div>

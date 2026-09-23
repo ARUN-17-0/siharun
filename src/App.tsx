@@ -25,7 +25,7 @@ export const App: React.FC = () => {
   const [packetLogs, setPacketLogs] = useState<LoRaPacket[]>([]);
   const [electionLogs, setElectionLogs] = useState<MasterElectionResult[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(1);
-  const [cameraPreset, setCameraPreset] = useState<'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV'>('ISOMETRIC');
+  const [cameraPreset, setCameraPreset] = useState<'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'STATION_POV'>('ISOMETRIC');
   const [demoStatus, setDemoStatus] = useState(simulationEngine.getDemoStatus());
 
   const lastTimeRef = useRef<number>(performance.now());
@@ -147,6 +147,8 @@ export const App: React.FC = () => {
         <RightInspector
           selectedNode={selectedNode}
           currentMasterId={network.currentMasterId}
+          scenario={network.scenario}
+          disasterPhase={network.disasterPhase}
         />
       </div>
 

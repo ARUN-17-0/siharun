@@ -221,6 +221,128 @@ const RiverBridge: React.FC<BridgeProps> = ({ position, rotationY }) => {
 export const ProceduralTerrain: React.FC = () => {
   const waterRef = useRef<THREE.Mesh>(null);
 
+  // Generate High-Resolution Satellite Orthophoto & Topographic Contours Texture
+  const { satelliteTexture, bumpTexture } = useMemo(() => {
+    const size = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+
+    // 1. Base dark alpine earth
+    ctx.fillStyle = '#1e331f';
+    ctx.fillRect(0, 0, size, size);
+
+    const imgData = ctx.getImageData(0, 0, size, size);
+    const data = imgData.data;
+
+    // Sample terrain heights & river positions to color the satellite orthophoto
+    for (let py = 0; py < size; py += 2) {
+      const v = py / size;
+      const worldZ = (v - 0.5) * 105;
+
+      for (let px = 0; px < size; px += 2) {
+        const u = px / size;
+        const worldX = (u - 0.5) * 105;
+
+        const h = getTerrainHeight(worldX, worldZ);
+        const riverX = getRiverCenter(worldZ);
+        const distRiver = Math.abs(worldX - riverX);
+
+        // Natural color palette
+        let r = 42, g = 74, b = 34; // Evergreen alpine meadow
+
+        if (h > 15.0) {
+          // Alpine mountain peak (Slate granite & frost)
+          const f = Math.min(1, (h - 15.0) / 7.0);
+          r = Math.floor(135 + f * 50);
+          g = Math.floor(142 + f * 45);
+          b = Math.floor(155 + f * 45);
+        } else if (h > 8.0 && worldX < -8) {
+          // Steep cliff rock strata
+          r = 88; g = 92; b = 96;
+        } else if (distRiver < 5.0) {
+          // River gravel & sand
+          r = 115; g = 106; b = 86;
+        } else if (worldX > 10 && worldZ > -6 && worldZ < 26) {
+          // Village agricultural terraces & pastures
+          r = 75; g = 115; b = 48;
+        }
+
+        // Topographic contour line overlay (drawn every 4.0 meters of elevation)
+        const contour = Math.abs((h % 4.0) - 2.0);
+        if (contour < 0.24) {
+          const isIndex = Math.abs((h % 8.0) - 4.0) < 0.28;
+          const alpha = isIndex ? 0.38 : 0.20;
+          r = Math.floor(r * (1 - alpha) + 230 * alpha);
+          g = Math.floor(g * (1 - alpha) + 242 * alpha);
+          b = Math.floor(b * (1 - alpha) + 255 * alpha);
+        }
+
+        // High-frequency surface grain noise
+        const grain = ((px * 17 + py * 31) % 19) - 9;
+        r = Math.max(0, Math.min(255, r + grain));
+        g = Math.max(0, Math.min(255, g + grain));
+        b = Math.max(0, Math.min(255, b + grain));
+
+        // 2x2 block fill
+        for (let dy = 0; dy < 2; dy++) {
+          for (let dx = 0; dx < 2; dx++) {
+            const idx = ((py + dy) * size + (px + dx)) * 4;
+            data[idx] = r;
+            data[idx + 1] = g;
+            data[idx + 2] = b;
+            data[idx + 3] = 255;
+          }
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // Mountain dirt trails & roads
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#634c35'; // Village access road
+    ctx.beginPath();
+    ctx.moveTo(size * 0.46, size * 0.52);
+    ctx.quadraticCurveTo(size * 0.64, size * 0.55, size * 0.82, size * 0.62);
+    ctx.stroke();
+
+    // GIS spatial grid ticks
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    for (let g = 128; g < size; g += 128) {
+      ctx.beginPath();
+      ctx.moveTo(g, 0); ctx.lineTo(g, size);
+      ctx.moveTo(0, g); ctx.lineTo(size, g);
+      ctx.stroke();
+    }
+
+    const satTex = new THREE.CanvasTexture(canvas);
+    satTex.wrapS = THREE.ClampToEdgeWrapping;
+    satTex.wrapT = THREE.ClampToEdgeWrapping;
+
+    // Companion surface bump relief texture
+    const bumpCanvas = document.createElement('canvas');
+    bumpCanvas.width = 256;
+    bumpCanvas.height = 256;
+    const bCtx = bumpCanvas.getContext('2d')!;
+    const bData = bCtx.createImageData(256, 256);
+    for (let i = 0; i < bData.data.length; i += 4) {
+      const n = Math.floor(Math.random() * 80 + 90);
+      bData.data[i] = n;
+      bData.data[i + 1] = n;
+      bData.data[i + 2] = n;
+      bData.data[i + 3] = 255;
+    }
+    bCtx.putImageData(bData, 0, 0);
+    const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+    bumpTex.wrapS = THREE.RepeatWrapping;
+    bumpTex.wrapT = THREE.RepeatWrapping;
+    bumpTex.repeat.set(12, 12);
+
+    return { satelliteTexture: satTex, bumpTexture: bumpTex };
+  }, []);
+
   // 1. High-Resolution Multi-Tone Fractal Mountain Mesh
   const terrainGeo = useMemo(() => {
     // 100x100 resolution for smooth organic curvature and jagged ridge crests
@@ -391,12 +513,15 @@ export const ProceduralTerrain: React.FC = () => {
 
   return (
     <group>
-      {/* 1. PHOTOREALISTIC PROCEDURAL MOUNTAIN TERRAIN */}
+      {/* 1. PHOTOREALISTIC PROCEDURAL MOUNTAIN TERRAIN WITH SATELLITE ORTHOPHOTO & CONTOURS */}
       <mesh geometry={terrainGeo} receiveShadow castShadow>
         <meshStandardMaterial 
+          map={satelliteTexture}
+          bumpMap={bumpTexture}
+          bumpScale={0.16}
           vertexColors 
-          roughness={0.92} 
-          metalness={0.06} 
+          roughness={0.88} 
+          metalness={0.08} 
           flatShading={false} 
         />
       </mesh>

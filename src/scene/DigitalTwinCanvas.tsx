@@ -10,6 +10,7 @@ import { VillageGateway3D } from './VillageGateway3D';
 import { MeshLinks3D } from './MeshLinks3D';
 import { PacketStream3D } from './PacketStream3D';
 import { HazardOverlays3D } from './HazardOverlays3D';
+import { DynamicWeather3D } from './DynamicWeather3D';
 import { GATEWAY_POSITION } from '../nodes/NodePhysics';
 
 // Distant Alpine Mountain Panorama Silhouette
@@ -67,7 +68,7 @@ interface DigitalTwinCanvasProps {
   evacuationState?: EvacuationState;
   evacuationProgress?: number;
   disasterPhase?: number;
-  cameraPreset?: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'RESET';
+  cameraPreset?: 'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'STATION_POV' | 'RESET';
 }
 
 export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
@@ -85,14 +86,34 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
 }) => {
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
+  // Dynamic weather-reactive parameters
+  const isRain = scenario === 'FLOOD' || scenario === 'LANDSLIDE';
+  const isFire = scenario === 'FIRE' || scenario === 'COMPLETE_DEMO';
+
+  const fogColor = isRain ? '#334155' : isFire ? '#78350f' : '#8da9be';
+  const fogNear = isRain ? 35 : isFire ? 42 : 55;
+  const fogFar = isRain ? 115 : isFire ? 125 : 145;
+
+  const sunIntensity = isRain ? (disasterPhase >= 3 ? 0.45 : 0.75) : isFire ? 1.45 : 1.35;
+  const sunColor = isRain ? '#cbd5e1' : isFire ? '#fed7aa' : '#fffbeb';
+  const ambientIntensity = isRain ? 0.28 : isFire ? 0.48 : 0.42;
+
   // Handle camera view preset transitions
   useEffect(() => {
     if (!controlsRef.current) return;
     const controls = controlsRef.current;
 
-    if (cameraPreset === 'TOP_DOWN') {
-      controls.object.position.set(0, 65, 0.1);
-      controls.target.set(0, 2, 0);
+    if (cameraPreset === 'STATION_POV' && selectedNodeId) {
+      // First-person perspective looking out from selected node's camera
+      const selected = nodes.find(n => n.id === selectedNodeId);
+      if (selected) {
+        const [nx, ny, nz] = selected.position3D;
+        controls.object.position.set(nx - 0.25, ny + 0.85, nz + 0.2);
+        controls.target.set(nx + 18, ny - 1.5, nz + 14);
+      }
+    } else if (cameraPreset === 'TOP_DOWN') {
+      controls.object.position.set(0, 72, 0.1);
+      controls.target.set(0, 0, 0);
     } else if (cameraPreset === 'GATEWAY_POV') {
       controls.object.position.set(GATEWAY_POSITION[0] + 12, GATEWAY_POSITION[1] + 10, GATEWAY_POSITION[2] + 12);
       controls.target.set(GATEWAY_POSITION[0], GATEWAY_POSITION[1] + 2, GATEWAY_POSITION[2]);
@@ -107,7 +128,7 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
       controls.target.set(0, 2, 0);
     }
     controls.update();
-  }, [cameraPreset, selectedNodeId]);
+  }, [cameraPreset, selectedNodeId, nodes]);
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#07090e]">
@@ -123,27 +144,27 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
           enableDamping
           dampingFactor={0.06}
           maxPolarAngle={Math.PI / 2 - 0.05} // Don't clip under ground
-          minDistance={10}
+          minDistance={2}
           maxDistance={120}
         />
 
         {/* Atmospheric Sky Shader */}
         <Sky
-          turbidity={6.5}
-          rayleigh={2.2}
+          turbidity={isRain ? 12 : isFire ? 9 : 6.5}
+          rayleigh={isRain ? 0.8 : isFire ? 3.5 : 2.2}
           mieCoefficient={0.005}
           mieDirectionalG={0.82}
-          sunPosition={[45, 30, 25]}
+          sunPosition={[45, isRain ? 20 : 30, 25]}
         />
 
         {/* Realistic Natural Atmospheric Lighting */}
-        <ambientLight intensity={0.42} color="#e2e8f0" />
+        <ambientLight intensity={ambientIntensity} color="#e2e8f0" />
         
-        {/* Warm Golden Sunlight with Soft Shadows */}
+        {/* Dynamic Sunlight with Soft Shadows */}
         <directionalLight
           position={[45, 38, 25]}
-          intensity={1.35}
-          color="#fffbeb"
+          intensity={sunIntensity}
+          color={sunColor}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -160,14 +181,17 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
           args={['#7dd3fc', '#1e293b', 0.45]}
         />
 
-        {/* Subtle Valley Horizon Fog */}
-        <fog attach="fog" args={['#8da9be', 55, 145]} />
+        {/* Dynamic Weather Horizon Fog */}
+        <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
         {/* Distant Alpine Mountain Panorama Silhouette */}
         <DistantMountainPanorama />
 
         {/* 3D Scene Primitives */}
         <ProceduralTerrain />
+
+        {/* Dynamic Weather Simulation (Rain, Lightning, Wildfire Embers) */}
+        <DynamicWeather3D scenario={scenario} disasterPhase={disasterPhase} />
 
         {/* Village Comm Gateway (Node 0) */}
         <VillageGateway3D 
