@@ -40,22 +40,22 @@ export const DemoTimelineOverlay: React.FC<DemoTimelineOverlayProps> = ({
 
   return (
     <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 w-[680px] max-w-[90vw] pointer-events-auto">
-      <div className="bg-[#0b1120]/95 backdrop-blur-xl border border-purple-500/60 rounded-xl p-3.5 shadow-2xl shadow-purple-950/50 ring-2 ring-purple-500/20 font-mono">
+      <div className="bg-[#0f172a]/95 backdrop-blur-xl border border-purple-500/40 rounded-2xl p-4 shadow-2xl font-sans">
         {/* Header Bar */}
-        <div className="flex items-center justify-between pb-2 border-b border-purple-900/40">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping" />
-            <span className="text-xs font-black text-purple-300 tracking-wider uppercase">
-              SIH 2026 COMPLETE DEMO SEQUENCE
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+            <span className="text-xs font-semibold text-purple-300 tracking-wide uppercase">
+              SIH 2026 Complete Demo Sequence
             </span>
-            <span className="bg-purple-950 text-purple-300 border border-purple-800 text-[10px] px-2 py-0.2 rounded font-bold">
-              STEP {stepNumber} OF {totalSteps}
+            <span className="bg-purple-500/10 text-purple-300 border border-purple-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium">
+              Step {stepNumber} of {totalSteps}
             </span>
           </div>
 
           <button
             onClick={onStopDemo}
-            className="text-slate-400 hover:text-slate-200 p-1 rounded hover:bg-slate-800 transition"
+            className="text-slate-400 hover:text-slate-200 p-1 rounded-md hover:bg-slate-800 transition"
             title="Stop Demonstration"
           >
             <X className="w-4 h-4" />

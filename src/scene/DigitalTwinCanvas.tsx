@@ -229,11 +229,11 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
       </Canvas>
 
       {/* 3D Viewport Controls HUD overlay */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-lg text-xs font-mono text-slate-300">
-        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-        <span>3D DIGITAL-TWIN VIEWPORT</span>
-        <span className="text-slate-500">|</span>
-        <span className="text-slate-400">Left-Click: Orbit • Right-Click: Pan • Scroll: Zoom</span>
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2.5 bg-slate-900/60 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-700/40 shadow-lg text-xs font-sans text-slate-300">
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block animate-pulse" />
+        <span className="font-medium tracking-wide text-slate-200">3D DIGITAL TWIN VIEWPORT</span>
+        <span className="text-slate-600">|</span>
+        <span className="text-slate-400 font-normal">Orbit: Left-drag • Pan: Right-drag • Zoom: Scroll</span>
       </div>
     </div>
   );

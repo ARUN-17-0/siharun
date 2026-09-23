@@ -90,7 +90,7 @@ export const App: React.FC = () => {
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#07090e] text-slate-100 overflow-hidden select-none">
+    <div className="w-screen h-screen flex flex-col bg-[#0b0f19] text-slate-100 font-sans antialiased overflow-hidden select-none">
       {/* 1. TOP STATUS & NAVIGATION BAR */}
       <TopNavigation 
         network={network} 
@@ -99,7 +99,7 @@ export const App: React.FC = () => {
       />
 
       {/* 2. SCENARIO CONTROL DOCK */}
-      <div className="px-4 py-2 bg-[#090d16] border-b border-slate-800/80 z-20">
+      <div className="px-4 py-2 bg-[#0c1322]/90 border-b border-slate-800/70 z-20">
         <ScenarioControls
           currentScenario={network.scenario}
           onSelectScenario={handleSelectScenario}

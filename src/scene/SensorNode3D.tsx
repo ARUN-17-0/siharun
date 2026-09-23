@@ -292,28 +292,28 @@ export const SensorNode3D: React.FC<SensorNode3DProps> = ({
       <Html position={[0, 2.2, 0]} center distanceFactor={28} zIndexRange={[100, 0]}>
         <div 
           onClick={() => onSelect(node.id)}
-          className={`cursor-pointer px-2 py-0.5 rounded text-xs font-mono font-bold tracking-tight shadow-lg transition-all flex items-center gap-1.5 border whitespace-nowrap ${
+          className={`cursor-pointer px-2.5 py-1 rounded-md text-xs font-sans font-medium tracking-tight shadow-lg transition-all flex items-center gap-1.5 border whitespace-nowrap backdrop-blur-md ${
             node.isMaster 
-              ? 'bg-amber-950/90 text-amber-300 border-amber-400 ring-2 ring-amber-400/40 shadow-amber-500/20' 
+              ? 'bg-amber-950/80 text-amber-300 border-amber-500/50 ring-1 ring-amber-500/30 shadow-amber-500/10' 
               : !node.isAlive
-              ? 'bg-slate-900/90 text-slate-400 border-slate-700 opacity-60 line-through'
+              ? 'bg-slate-900/80 text-slate-400 border-slate-800/80 opacity-60 line-through'
               : isSelected
-              ? 'bg-cyan-950/95 text-cyan-200 border-cyan-400 ring-2 ring-cyan-400/50 scale-110'
-              : 'bg-slate-900/85 text-slate-200 border-slate-700/80 hover:border-slate-400'
+              ? 'bg-sky-950/80 text-sky-200 border-sky-400/60 ring-1 ring-sky-400/40 scale-105'
+              : 'bg-slate-900/80 text-slate-300 border-slate-800/80 hover:border-slate-600/80'
           }`}
         >
           <span 
-            className="w-2 h-2 rounded-full inline-block animate-pulse" 
+            className="w-2 h-2 rounded-full inline-block" 
             style={{ backgroundColor: statusColor }} 
           />
-          <span>N{node.id}</span>
+          <span className="font-mono font-semibold">N{node.id}</span>
           {node.isMaster && (
-            <span className="bg-amber-500 text-slate-950 px-1 rounded text-[9px] font-extrabold uppercase">
+            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.5 rounded text-[9px] font-semibold tracking-wider uppercase">
               MASTER
             </span>
           )}
           {node.aiResult.status === 'CRITICAL' && (
-            <span className="bg-red-600 text-white px-1 rounded text-[9px] font-extrabold uppercase animate-bounce">
+            <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 px-1 py-0.5 rounded text-[9px] font-semibold uppercase animate-pulse">
               !
             </span>
           )}

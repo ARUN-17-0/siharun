@@ -246,25 +246,25 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
 
       {/* Floating 3D Label & Evacuation Status */}
       <Html position={[0, 8.4, 0]} center distanceFactor={30} zIndexRange={[100, 0]}>
-        <div className="flex flex-col items-center gap-1">
-          <div className="bg-slate-950 border-2 border-emerald-400 text-emerald-300 px-3 py-1 rounded-md text-xs font-mono font-black shadow-2xl flex items-center gap-2 whitespace-nowrap">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block" />
-            <span>VILLAGE COMM GATEWAY</span>
-            <span className="bg-emerald-950 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded border border-emerald-700">
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="bg-slate-900/90 backdrop-blur-md border border-emerald-500/40 text-emerald-300 px-3 py-1.5 rounded-lg text-xs font-sans font-medium shadow-xl flex items-center gap-2 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
+            <span className="tracking-wide">VILLAGE COMM GATEWAY</span>
+            <span className="bg-emerald-500/10 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30 font-mono">
               443MHz SINK
             </span>
           </div>
 
           {/* Evacuation Alert Banner */}
           {evacuationState !== 'STANDBY' && (
-            <div className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border shadow-lg animate-bounce ${
+            <div className={`px-2.5 py-1 rounded-md text-[11px] font-sans font-medium tracking-wide border shadow-lg backdrop-blur-md flex items-center gap-1.5 ${
               evacuationState === 'EVACUATED_SAFE'
-                ? 'bg-emerald-950 text-emerald-300 border-emerald-500'
-                : 'bg-red-950 text-red-200 border-red-500'
+                ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                : 'bg-rose-950/80 text-rose-200 border-rose-500/40 animate-pulse'
             }`}>
-              {evacuationState === 'WARNING_ISSUED' && '🚨 EARLY WARNING: SIRENS ACTIVE'}
-              {evacuationState === 'EVACUATING' && `⚠️ VILLAGE EVACUATING (${(evacuationProgress * 100).toFixed(0)}%)`}
-              {evacuationState === 'EVACUATED_SAFE' && '✅ VILLAGE SAFELY EVACUATED TO HIGH GROUND'}
+              {evacuationState === 'WARNING_ISSUED' && '🚨 Early Warning: Sirens Active'}
+              {evacuationState === 'EVACUATING' && `⚠️ Village Evacuating (${(evacuationProgress * 100).toFixed(0)}%)`}
+              {evacuationState === 'EVACUATED_SAFE' && '✅ Village Safely Evacuated to High Ground'}
             </div>
           )}
         </div>

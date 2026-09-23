@@ -8,19 +8,20 @@ export default {
     extend: {
       colors: {
         mesh: {
-          dark: '#0a0d14',
-          card: '#111726',
-          border: '#1e293b',
-          accent: '#06b6d4',
-          accentGlow: 'rgba(6, 182, 212, 0.25)',
-          alert: '#ef4444',
+          dark: '#0b0f19',
+          card: '#111827',
+          border: 'rgba(51, 65, 85, 0.4)',
+          accent: '#38bdf8',
+          accentGlow: 'rgba(56, 189, 248, 0.15)',
+          alert: '#f43f5e',
           warning: '#f59e0b',
           success: '#10b981',
           gold: '#eab308',
         }
       },
       fontFamily: {
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       }
     },
   },

@@ -29,67 +29,67 @@ export const ScenarioControls: React.FC<ScenarioControlsProps> = ({
   isDemoRunning
 }) => {
   return (
-    <div className="bg-[#0c121e] border-2 border-slate-700 p-2.5 rounded-lg shadow-xl flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+    <div className="bg-[#0c1322]/90 border border-slate-800/80 p-2 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-2 text-xs font-sans">
       {/* 3 Core Disaster Scenarios */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] text-slate-300 font-black px-2 uppercase tracking-wider bg-slate-900 border border-slate-700 py-1 rounded">
-          DISASTER CONTROLS:
+        <span className="text-[11px] text-slate-400 font-medium px-2 py-1 uppercase tracking-wider">
+          Scenarios:
         </span>
 
         {/* Normal */}
         <button
           onClick={() => onSelectScenario('NORMAL')}
           disabled={isDemoRunning}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-black transition-all border-2 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all border ${
             currentScenario === 'NORMAL' && !isDemoRunning
-              ? 'bg-emerald-600 text-white border-emerald-300 shadow-lg shadow-emerald-700/40'
-              : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-white'
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm'
+              : 'bg-slate-800/40 text-slate-300 border-slate-700/40 hover:bg-slate-800 hover:text-white'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          Normal Baseline
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Normal Baseline</span>
         </button>
 
         {/* 1. Forest Fire */}
         <button
           onClick={() => onSelectScenario('FIRE')}
           disabled={isDemoRunning}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-black transition-all border-2 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all border ${
             currentScenario === 'FIRE'
-              ? 'bg-red-600 text-white border-red-300 shadow-lg shadow-red-700/50 ring-2 ring-red-400'
-              : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-red-300'
+              ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-sm'
+              : 'bg-slate-800/40 text-slate-300 border-slate-700/40 hover:bg-slate-800 hover:text-rose-300'
           }`}
         >
-          <Flame className="w-4 h-4 text-red-400" />
-          1. Forest Fire
+          <Flame className="w-3.5 h-3.5 text-rose-400" />
+          <span>1. Forest Fire</span>
         </button>
 
         {/* 2. Flood */}
         <button
           onClick={() => onSelectScenario('FLOOD')}
           disabled={isDemoRunning}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-black transition-all border-2 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all border ${
             currentScenario === 'FLOOD'
-              ? 'bg-blue-600 text-white border-cyan-300 shadow-lg shadow-blue-700/50 ring-2 ring-cyan-400'
-              : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-cyan-300'
+              ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-sm'
+              : 'bg-slate-800/40 text-slate-300 border-slate-700/40 hover:bg-slate-800 hover:text-sky-300'
           }`}
         >
-          <Droplets className="w-4 h-4 text-cyan-400" />
-          2. Flash Flood
+          <Droplets className="w-3.5 h-3.5 text-sky-400" />
+          <span>2. Flash Flood</span>
         </button>
 
         {/* 3. Landslide */}
         <button
           onClick={() => onSelectScenario('LANDSLIDE')}
           disabled={isDemoRunning}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-black transition-all border-2 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all border ${
             currentScenario === 'LANDSLIDE'
-              ? 'bg-amber-600 text-white border-amber-300 shadow-lg shadow-amber-700/50 ring-2 ring-amber-400'
-              : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-amber-300'
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
+              : 'bg-slate-800/40 text-slate-300 border-slate-700/40 hover:bg-slate-800 hover:text-amber-300'
           }`}
         >
-          <Mountain className="w-4 h-4 text-amber-400" />
-          3. Landslide
+          <Mountain className="w-3.5 h-3.5 text-amber-400" />
+          <span>3. Landslide</span>
         </button>
       </div>
 
@@ -98,43 +98,43 @@ export const ScenarioControls: React.FC<ScenarioControlsProps> = ({
         {/* Trigger Handover */}
         <button
           onClick={onTriggerHandover}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded font-bold transition-all bg-amber-950 text-amber-200 border-2 border-amber-500 hover:bg-amber-900 hover:text-white active:scale-95 shadow-md"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 active:scale-95 shadow-sm"
           title="Simulate thermal warning and graceful master handover"
         >
-          <ArrowRightLeft className="w-4 h-4 text-amber-400" />
-          Master Handover
+          <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
+          <span>Master Handover</span>
         </button>
 
         {/* Kill Master */}
         <button
           onClick={onKillMaster}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded font-bold transition-all bg-red-950 text-red-200 border-2 border-red-500 hover:bg-red-900 hover:text-white active:scale-95 shadow-md"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 active:scale-95 shadow-sm"
           title="Abruptly power off current master to test sudden failure recovery"
         >
-          <Skull className="w-4 h-4 text-red-400" />
-          Kill Master
+          <Skull className="w-3.5 h-3.5 text-rose-400" />
+          <span>Kill Master</span>
         </button>
 
         {/* Reset */}
         <button
           onClick={onReset}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded font-bold transition-all bg-slate-900 text-slate-200 border-2 border-slate-700 hover:bg-slate-800 hover:text-white active:scale-95 shadow-md"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all bg-slate-800/40 text-slate-300 border border-slate-700/40 hover:bg-slate-800 hover:text-white active:scale-95 shadow-sm"
         >
-          <RotateCcw className="w-4 h-4 text-slate-400" />
-          Reset
+          <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+          <span>Reset</span>
         </button>
 
         {/* Complete Demo */}
         <button
           onClick={() => onSelectScenario('COMPLETE_DEMO')}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded font-black transition-all border-2 ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-semibold transition-all border ${
             isDemoRunning
-              ? 'bg-purple-600 text-white border-purple-300 shadow-xl shadow-purple-600/50 ring-2 ring-purple-300 animate-pulse'
-              : 'bg-gradient-to-r from-purple-700 to-indigo-700 text-white border-purple-400 hover:from-purple-600 hover:to-indigo-600 shadow-lg shadow-purple-900/40'
+              ? 'bg-purple-600/90 text-white border-purple-400 shadow-md ring-1 ring-purple-400/50 animate-pulse'
+              : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400/40 hover:from-purple-500 hover:to-indigo-500 shadow-sm'
           }`}
         >
-          <Zap className="w-4 h-4 text-yellow-300 fill-yellow-300" />
-          <span>{isDemoRunning ? 'DEMO IN PROGRESS...' : 'COMPLETE DEMO (2 MIN)'}</span>
+          <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+          <span>{isDemoRunning ? 'Demo Active...' : 'Complete Demo (2 Min)'}</span>
         </button>
       </div>
     </div>

@@ -26,28 +26,28 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
   const getLogBadge = (level: TelemetryLog['level']) => {
     switch (level) {
       case 'DANGER':
-        return <span className="bg-red-950 text-red-300 border border-red-500 px-1 rounded text-[9px] font-black">CRITICAL</span>;
+        return <span className="bg-rose-500/15 text-rose-400 border border-rose-500/30 px-1.5 py-0.2 rounded text-[9px] font-medium">Critical</span>;
       case 'WARN':
-        return <span className="bg-amber-950 text-amber-300 border border-amber-500 px-1 rounded text-[9px] font-black">WARNING</span>;
+        return <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded text-[9px] font-medium">Warning</span>;
       case 'SUCCESS':
-        return <span className="bg-emerald-950 text-emerald-300 border border-emerald-500 px-1 rounded text-[9px] font-black">SUCCESS</span>;
+        return <span className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded text-[9px] font-medium">Success</span>;
       case 'INFO':
-        return <span className="bg-cyan-950 text-cyan-300 border border-cyan-500 px-1 rounded text-[9px] font-black">INFO</span>;
+        return <span className="bg-sky-500/15 text-sky-400 border border-sky-500/30 px-1.5 py-0.2 rounded text-[9px] font-medium">Info</span>;
     }
   };
 
   return (
-    <div className="h-48 bg-[#050811] border-t-2 border-slate-700 flex flex-col z-10 select-none shadow-2xl font-mono text-xs">
+    <div className="h-44 bg-[#0c1322]/95 backdrop-blur-md border-t border-slate-800 flex flex-col z-10 select-none shadow-lg font-sans text-xs">
       {/* Tab Navigation */}
-      <div className="h-9 px-3 border-b-2 border-slate-700 flex items-center justify-between bg-slate-900">
+      <div className="h-9 px-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
         <div className="flex items-center gap-2">
           {/* Tab 1: System Events */}
           <button
             onClick={() => setActiveTab('EVENTS')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-black transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
               activeTab === 'EVENTS'
-                ? 'bg-cyan-900 text-white border border-cyan-400'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-sky-500/15 text-sky-300 border border-sky-500/35 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
@@ -57,10 +57,10 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
           {/* Tab 2: Master Election Audit */}
           <button
             onClick={() => setActiveTab('ELECTIONS')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-black transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
               activeTab === 'ELECTIONS'
-                ? 'bg-amber-900 text-white border border-amber-400'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Crown className="w-3.5 h-3.5" />
@@ -77,7 +77,7 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
               placeholder="Search logs..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded pl-7 pr-2 py-0.5 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 w-44"
+              className="bg-slate-900 border border-slate-700/60 rounded-md pl-7 pr-2 py-0.5 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500/60 w-44 font-mono"
             />
           </div>
         </div>
@@ -89,17 +89,17 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
         {activeTab === 'EVENTS' && (
           <div>
             {filteredLogs.length === 0 ? (
-              <div className="text-slate-500 italic p-2">No event records found.</div>
+              <div className="text-slate-500 italic p-2 font-sans">No event records found.</div>
             ) : (
               filteredLogs.map(log => (
-                <div key={log.id} className="flex items-start gap-2 py-0.5 hover:bg-slate-900/80 px-1.5 rounded">
-                  <span className="text-slate-400 shrink-0 font-bold">
+                <div key={log.id} className="flex items-start gap-2 py-0.5 hover:bg-slate-800/40 px-1.5 rounded transition-colors">
+                  <span className="text-slate-400 shrink-0 font-medium">
                     {new Date(log.timestamp).toLocaleTimeString()}
                   </span>
                   {getLogBadge(log.level)}
-                  <span className="text-cyan-400 shrink-0 font-black">[{log.category}]</span>
-                  <span className="text-white font-bold">{log.title}:</span>
-                  <span className="text-slate-200">{log.message}</span>
+                  <span className="text-sky-400 shrink-0 font-medium">[{log.category}]</span>
+                  <span className="text-slate-300 font-semibold">{log.title}:</span>
+                  <span className="text-slate-400 truncate">{log.message}</span>
                 </div>
               ))
             )}
@@ -108,43 +108,29 @@ export const BottomTerminal: React.FC<BottomTerminalProps> = ({
 
         {/* TAB 2: MASTER ELECTIONS */}
         {activeTab === 'ELECTIONS' && (
-          <div className="space-y-2">
+          <div>
             {elections.length === 0 ? (
-              <div className="text-slate-500 italic p-2">No master handovers or elections recorded yet.</div>
+              <div className="text-slate-500 italic p-2 font-sans">No master election cycles recorded yet.</div>
             ) : (
-              elections.map((elec, idx) => (
-                <div key={`elec-${idx}`} className="bg-amber-950/30 border-2 border-amber-500 p-2.5 rounded">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <Crown className="w-4 h-4 text-amber-400" />
-                      <span className="text-amber-300 font-black">
-                        {elec.triggerType === 'GRACEFUL_HANDOVER' ? 'GRACEFUL MASTER HANDOVER' : 'WATCHDOG TIMEOUT ELECTION'}
-                      </span>
-                      <span className="text-slate-200 font-bold">
-                        Old Master: N{elec.oldMasterId} → <strong className="text-amber-300">New Master: N{elec.newMasterId}</strong>
-                      </span>
-                    </div>
-                    <span className="text-slate-400 text-[10px] font-bold">
-                      {new Date(elec.timestamp).toLocaleTimeString()}
+              elections.map((el, idx) => (
+                <div key={`el-${idx}`} className="p-2.5 bg-slate-800/30 border border-slate-800/80 rounded-lg mb-1.5 font-sans">
+                  <div className="flex items-center justify-between font-semibold mb-1 text-xs">
+                    <span className="text-amber-400 flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5" />
+                      Elected Master: Node {el.newMasterId} (was Node {el.oldMasterId})
+                    </span>
+                    <span className="text-slate-400 text-[11px] font-normal">
+                      {new Date(el.timestamp).toLocaleTimeString()} • Reason: {el.reason}
                     </span>
                   </div>
-
-                  <p className="text-slate-200 text-[11px] mb-2 font-medium">
-                    <strong className="text-amber-400">Trigger Rationale:</strong> {elec.reason}
-                  </p>
-
-                  <div className="bg-slate-950 p-2 rounded border border-slate-800">
-                    <div className="text-[10px] text-slate-400 font-black uppercase mb-1">Candidate Scoring Rationale (Health + Battery + Connectivity + Proximity):</div>
-                    <div className="grid grid-cols-2 gap-1 text-[10px]">
-                      {elec.candidateScores.slice(0, 4).map(c => (
-                        <div key={`cand-${c.nodeId}`} className="flex justify-between px-1.5 py-0.5 bg-slate-900 rounded border border-slate-800">
-                          <span className={c.nodeId === elec.newMasterId ? 'text-amber-400 font-black' : 'text-slate-200 font-bold'}>
-                            Node {c.nodeId} (Score: {c.totalScore}%)
-                          </span>
-                          <span className="text-slate-400">{c.reason.split('|')[0]}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                    <span className="bg-slate-800/60 px-1.5 py-0.5 rounded text-[10px] text-slate-300 font-mono">
+                      {el.triggerType}
+                    </span>
+                    <span>•</span>
+                    <span>Candidates Evaluated: {el.candidateScores.length}</span>
+                    <span>•</span>
+                    <span>Top Score: {el.candidateScores[0]?.totalScore?.toFixed(1) || 0} pts</span>
                   </div>
                 </div>
               ))

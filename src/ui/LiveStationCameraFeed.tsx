@@ -274,37 +274,37 @@ export const LiveStationCameraFeed: React.FC<LiveStationCameraFeedProps> = ({
   }, [node, scenario, disasterPhase, visionMode]);
 
   return (
-    <div className="bg-[#060a12] border-2 border-slate-700 rounded-lg overflow-hidden shadow-xl text-xs font-mono">
+    <div className="bg-[#0f172a]/80 border border-slate-700/50 rounded-xl overflow-hidden shadow-md font-sans">
       {/* Top Feed Header & OSD Bar */}
-      <div className="bg-slate-900 px-2.5 py-1.5 border-b border-slate-700 flex items-center justify-between">
+      <div className="bg-slate-900/80 px-3 py-1.5 border-b border-slate-800/80 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-          <span className="text-white font-bold text-[11px] tracking-wider uppercase">
-            CAM N{node.id} // {visionMode}
+          <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+          <span className="text-slate-200 font-semibold text-[11px] tracking-wide">
+            Cam N{node.id} // {visionMode}
           </span>
-          <span className="bg-slate-800 text-slate-400 text-[9px] px-1.5 py-0.2 rounded border border-slate-700">
+          <span className="bg-slate-800/60 text-slate-400 text-[9px] px-1.5 py-0.2 rounded font-mono border border-slate-700/40">
             30 FPS
           </span>
         </div>
 
         {/* Optical vs Thermal Toggle */}
-        <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded border border-slate-800 text-[10px]">
+        <div className="flex items-center gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-slate-800/60 text-[10px] font-medium">
           <button
             onClick={() => setVisionMode('OPTICAL')}
-            className={`px-2 py-0.5 rounded font-bold transition-all ${
+            className={`px-2 py-0.5 rounded-md transition-all ${
               visionMode === 'OPTICAL'
-                ? 'bg-cyan-600 text-white shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             RGB
           </button>
           <button
             onClick={() => setVisionMode('THERMAL')}
-            className={`px-2 py-0.5 rounded font-bold transition-all ${
+            className={`px-2 py-0.5 rounded-md transition-all ${
               visionMode === 'THERMAL'
-                ? 'bg-purple-600 text-white shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             FLIR IR
@@ -313,7 +313,7 @@ export const LiveStationCameraFeed: React.FC<LiveStationCameraFeedProps> = ({
       </div>
 
       {/* Synthetic Live Video Feed Canvas */}
-      <div className="relative aspect-video bg-black w-full overflow-hidden">
+      <div className="relative aspect-video bg-black/80 w-full overflow-hidden">
         <canvas 
           ref={canvasRef} 
           width={360} 
@@ -322,22 +322,22 @@ export const LiveStationCameraFeed: React.FC<LiveStationCameraFeedProps> = ({
         />
 
         {/* Real-time OSD Telemetry Stamps */}
-        <div className="absolute top-2 left-2 text-[9px] font-mono text-cyan-300 drop-shadow-md bg-black/40 px-1 rounded">
+        <div className="absolute top-2 left-2 text-[9px] font-mono text-sky-300/90 drop-shadow bg-black/50 px-1.5 py-0.5 rounded">
           {currentTime || '2026-09-23 13:45:00 UTC'}
         </div>
 
-        <div className="absolute top-2 right-2 text-[9px] font-mono text-slate-300 drop-shadow-md bg-black/40 px-1 rounded">
+        <div className="absolute top-2 right-2 text-[9px] font-mono text-slate-300/90 drop-shadow bg-black/50 px-1.5 py-0.5 rounded">
           AZ: 218° | EL: -11° | FOV: 72°
         </div>
 
-        <div className="absolute bottom-2 left-2 flex items-center gap-2 text-[9px] font-mono text-emerald-400 bg-black/50 px-1.5 py-0.5 rounded border border-emerald-900/60">
+        <div className="absolute bottom-2 left-2 flex items-center gap-2 text-[9px] font-mono text-emerald-400 bg-black/60 px-2 py-0.5 rounded border border-emerald-500/20">
           <span>BATT: {node.health.batteryLevel}%</span>
           <span>•</span>
           <span>SOLAR: {(node.health.batteryLevel * 0.05).toFixed(1)}W</span>
         </div>
 
         {node.aiResult.status === 'CRITICAL' && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-red-600/90 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-bounce">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-rose-500/90 text-white text-[9px] font-semibold px-2 py-0.5 rounded shadow animate-bounce">
             <ShieldAlert className="w-3 h-3" />
             AI ALERT TRIGGERED
           </div>
@@ -345,9 +345,9 @@ export const LiveStationCameraFeed: React.FC<LiveStationCameraFeedProps> = ({
       </div>
 
       {/* Camera Vision Specs Footer */}
-      <div className="px-2.5 py-1.5 bg-slate-900/90 border-t border-slate-800 text-[10px] text-slate-300 flex items-center justify-between">
-        <span className="text-slate-400">Sensor: Sony IMX477 12MP + MLX90640 IR</span>
-        <span className="text-cyan-400 font-bold">Edge AI: YOLO-v8n-Tiny</span>
+      <div className="px-3 py-1.5 bg-slate-900/60 border-t border-slate-800/60 text-[10px] text-slate-400 flex items-center justify-between">
+        <span>Sensor: Sony IMX477 12MP + MLX90640 IR</span>
+        <span className="text-sky-400 font-medium">Edge AI: YOLO-v8n-Tiny</span>
       </div>
     </div>
   );
