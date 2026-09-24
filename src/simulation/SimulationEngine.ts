@@ -47,7 +47,7 @@ export class SimulationEngine {
   private nodeStates: NodeState[] = [];
   private prevSensorData: Map<number, typeof this.nodeStates[0]['sensorData']> = new Map();
   private inferenceStates: Map<number, EdgeInferenceState> = new Map();
-  private currentMasterId: number = 1;
+  private currentMasterId: number = 5;
   private gatewayOnline: boolean = true;
   private scenario: ScenarioType = 'NORMAL';
   
@@ -109,7 +109,7 @@ export class SimulationEngine {
         name: def.name,
         zone: def.zone,
         position3D: [...def.position3D] as [number, number, number],
-        isMaster: def.id === 1,
+        isMaster: def.id === 5,
         isAlive: true,
         sensorData,
         temporalFeatures,
@@ -135,7 +135,7 @@ export class SimulationEngine {
       };
     });
 
-    this.currentMasterId = 1;
+    this.currentMasterId = 5;
     this.disasterPhase = 1;
     this.disasterPhaseTimer = 0;
     this.evacuationState = 'STANDBY';
@@ -646,12 +646,12 @@ export class SimulationEngine {
     this.disasterPhaseTimer = 0;
     this.evacuationState = 'STANDBY';
     this.evacuationProgress = 0.0;
-    this.currentMasterId = 1;
+    this.currentMasterId = 5;
     this.gatewayOnline = true;
     this.activePacketAnimations = [];
     this.initNodes();
     this.recomputeTopology();
-    this.addLog('EARLY_WARNING', 'INFO', 'System Reset', 'Network reset to nominal conditions. Node 1 is Master Node.');
+    this.addLog('EARLY_WARNING', 'INFO', 'System Reset', 'Network reset to nominal conditions. Node 5 is Master Node.');
     this.notify();
   }
 

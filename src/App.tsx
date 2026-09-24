@@ -24,7 +24,7 @@ export const App: React.FC = () => {
   const [eventLogs, setEventLogs] = useState<TelemetryLog[]>([]);
   const [packetLogs, setPacketLogs] = useState<LoRaPacket[]>([]);
   const [electionLogs, setElectionLogs] = useState<MasterElectionResult[]>([]);
-  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(1);
+  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(5);
   const [cameraPreset, setCameraPreset] = useState<'ISOMETRIC' | 'TOP_DOWN' | 'GATEWAY_POV' | 'STATION_POV'>('ISOMETRIC');
   const [demoStatus, setDemoStatus] = useState(simulationEngine.getDemoStatus());
 
@@ -97,7 +97,7 @@ export const App: React.FC = () => {
 
   const handleReset = () => {
     simulationEngine.resetSimulation();
-    setSelectedNodeId(1);
+    setSelectedNodeId(5);
     setCameraPreset('ISOMETRIC');
     flushStateImmediately();
   };

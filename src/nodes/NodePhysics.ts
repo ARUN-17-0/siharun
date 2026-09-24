@@ -81,7 +81,7 @@ export const GATEWAY_GPS = { lat: 30.1448, lng: 79.1285, alt: 1420 };
 export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
   {
     id: 1,
-    name: "Mountain Tree Post N1 (Master)",
+    name: "Mountain Tree Post N1",
     zone: "FOREST_UPPER",
     position3D: [-26, Math.round((getTerrainHeight(-26, -22) + 3.2) * 10) / 10, -22], // ~19.8m (Tree-mounted)
     gps: { lat: 30.1652, lng: 79.1021, alt: 1890 },
@@ -113,11 +113,11 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
   },
   {
     id: 5,
-    name: "Valley Culvert N5",
+    name: "Valley Culvert N5 (Master)",
     zone: "RIVER_VALLEY",
     position3D: [-2, Math.round((getTerrainHeight(-2, 8) + 0.3) * 10) / 10, 8], // ~0.55m
     gps: { lat: 30.1462, lng: 79.1215, alt: 1435 },
-    description: "Downstream gorge bottleneck for flash-flood surge detection."
+    description: "Central river valley monitoring post and Regional Master Node aggregating LoRa telemetry towards the Village Gateway."
   },
   {
     id: 6,
