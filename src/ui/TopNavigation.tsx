@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { 
   Radio, 
   Cpu, 
@@ -7,8 +7,6 @@ import {
   ShieldCheck,
   AlertTriangle,
   Users,
-  Volume2,
-  VolumeX,
   Compass
 } from 'lucide-react';
 import { NetworkState } from '../types';
@@ -24,61 +22,6 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
   onCameraPreset,
   activeCamera
 }) => {
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const oscRef = useRef<OscillatorNode | null>(null);
-
-  // Web Audio API Emergency Siren Synthesizer
-  useEffect(() => {
-    const isWarning = network.evacuationState === 'WARNING_ISSUED' || network.evacuationState === 'EVACUATING';
-
-    if (!audioEnabled || !isWarning) {
-      if (oscRef.current) {
-        try { oscRef.current.stop(); } catch (_) {}
-        oscRef.current.disconnect();
-        oscRef.current = null;
-      }
-      return;
-    }
-
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioCtx();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      if (!oscRef.current) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        gain.gain.value = 0.04; // Low background volume
-
-        const now = ctx.currentTime;
-        osc.frequency.setValueAtTime(620, now);
-        for (let i = 0; i < 40; i++) {
-          osc.frequency.linearRampToValueAtTime(880, now + i * 1.6 + 0.8);
-          osc.frequency.linearRampToValueAtTime(620, now + i * 1.6 + 1.6);
-        }
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        oscRef.current = osc;
-      }
-    } catch (_) {}
-
-    return () => {
-      if (oscRef.current) {
-        try { oscRef.current.stop(); } catch (_) {}
-        oscRef.current.disconnect();
-        oscRef.current = null;
-      }
-    };
-  }, [audioEnabled, network.evacuationState]);
 
   const getScenarioBadge = () => {
     switch (network.scenario) {
@@ -110,7 +53,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
         return (
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/40 px-2.5 py-1 rounded-md text-xs text-amber-300 animate-pulse">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span>Siren Active: <strong className="text-amber-200 font-medium">Warning Dispatched</strong></span>
+            <span>Early Warning: <strong className="text-amber-200 font-medium">Alert Dispatched</strong></span>
           </div>
         );
       case 'EVACUATING':
@@ -162,19 +105,6 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
         {/* Village Evacuation Monitor */}
         {getEvacuationBadge()}
 
-        {/* Emergency Audio Siren Toggle */}
-        <button
-          onClick={() => setAudioEnabled(!audioEnabled)}
-          title={audioEnabled ? "Disable Siren Sound" : "Enable Emergency Audio Siren"}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border transition-all ${
-            audioEnabled 
-              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm animate-pulse' 
-              : 'bg-slate-800/40 text-slate-400 border-slate-700/40 hover:text-slate-200'
-          }`}
-        >
-          {audioEnabled ? <Volume2 className="w-3.5 h-3.5 text-amber-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-400" />}
-          <span className="text-[10px] font-medium tracking-wide">{audioEnabled ? 'SIREN ON' : 'SIREN OFF'}</span>
-        </button>
 
         {/* Active Nodes */}
         <div className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/40 px-3 py-1.5 rounded-md">

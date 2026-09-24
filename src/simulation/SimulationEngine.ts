@@ -427,8 +427,8 @@ export class SimulationEngine {
               this.evacuationState = 'WARNING_ISSUED';
               this.disasterPhase = 2;
               this.disasterPhaseTimer = 0;
-              this.phaseNarration = 'Phase 2: Warning received at Gateway. Village emergency sirens sounding!';
-              this.addLog('EARLY_WARNING', 'WARN', 'Emergency Sirens Triggered', 'Village sirens active. Evacuation order in effect.');
+              this.phaseNarration = 'Phase 2: Warning received at Gateway. Early warning broadcast active!';
+              this.addLog('EARLY_WARNING', 'WARN', 'Early Warning Broadcast', 'Warning dispatched to Village Gateway. Evacuation order in effect.');
             }
           }
         } else {

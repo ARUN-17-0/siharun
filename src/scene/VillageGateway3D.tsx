@@ -18,7 +18,6 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
 }) => {
   const beaconRef = useRef<THREE.Mesh>(null);
   const dishRef = useRef<THREE.Group>(null);
-  const sirenLightRef = useRef<THREE.PointLight>(null);
   const evacConvoyRef = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
@@ -27,16 +26,6 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
     }
     if (dishRef.current) {
       dishRef.current.rotation.y = Math.sin(Date.now() * 0.0005) * 0.25 - 0.4;
-    }
-
-    // Siren flashing strobe when warning issued or evacuating
-    if (sirenLightRef.current) {
-      if (evacuationState === 'WARNING_ISSUED' || evacuationState === 'EVACUATING') {
-        const strobe = Math.sin(state.clock.getElapsedTime() * 10.0) > 0 ? 8.0 : 0.0;
-        sirenLightRef.current.intensity = strobe;
-      } else {
-        sirenLightRef.current.intensity = 0;
-      }
     }
 
     // Evacuation convoy movement along road to high ground
@@ -173,21 +162,7 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
           </mesh>
         </group>
 
-        {/* Disaster Early Warning 4-Horn Siren Assembly */}
-        <group position={[0, 6.4, 0]}>
-          {[0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2].map((angle, i) => (
-            <mesh 
-              key={`siren-horn-${i}`}
-              position={[Math.cos(angle) * 0.32, 0, Math.sin(angle) * 0.32]} 
-              rotation={[0, -angle, -Math.PI / 2]}
-            >
-              <coneGeometry args={[0.12, 0.3, 10, 1, true]} />
-              <meshStandardMaterial color="#ef4444" metalness={0.6} roughness={0.3} side={THREE.DoubleSide} />
-            </mesh>
-          ))}
-        </group>
-
-        {/* Apex Gateway Collinear Mast & Strobe */}
+        {/* Apex Gateway Collinear Mast */}
         <group position={[0, 7.05, 0]}>
           {/* Omnidirectional Fiberglass Collinear Repeater Mast */}
           <mesh position={[0, 1.1, 0]} castShadow>
@@ -204,15 +179,6 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
               emissiveIntensity={online ? 3.2 : 0.5} 
             />
           </mesh>
-
-          {/* Emergency Siren Strobe Light (Flashes brightly when warning issued) */}
-          <pointLight 
-            ref={sirenLightRef} 
-            position={[0, 2.4, 0]} 
-            color="#ef4444" 
-            intensity={0} 
-            distance={50} 
-          />
         </group>
       </group>
 
@@ -262,7 +228,7 @@ export const VillageGateway3D: React.FC<VillageGateway3DProps> = ({
                 ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
                 : 'bg-rose-950/80 text-rose-200 border-rose-500/40 animate-pulse'
             }`}>
-              {evacuationState === 'WARNING_ISSUED' && '🚨 Early Warning: Sirens Active'}
+              {evacuationState === 'WARNING_ISSUED' && '🚨 Early Warning: Alert Broadcast'}
               {evacuationState === 'EVACUATING' && `⚠️ Village Evacuating (${(evacuationProgress * 100).toFixed(0)}%)`}
               {evacuationState === 'EVACUATED_SAFE' && '✅ Village Safely Evacuated to High Ground'}
             </div>

@@ -120,7 +120,7 @@ export function updateNodeSensors(
         }
         targetCamera.floodConfidence = 0.35 * phaseProgress;
       } else if (disasterPhase === 2) {
-        // Phase 2: Warning Dispatched across mesh (sirens active)
+        // Phase 2: Warning Dispatched across mesh (early warning active)
         targetRainfall = 55.0;
         targetHumidity = 85.0;
         targetSoilMoisture = 78.0;

@@ -61,9 +61,9 @@ export const COMPLETE_DEMO_STEPS: DemoStep[] = [
   },
   {
     stepIndex: 6,
-    title: "6. Village Emergency Siren & Evacuation Starts",
+    title: "6. Village Early Warning & Evacuation Starts",
     durationMs: 10000,
-    description: "Village Gateway sounds emergency sirens BEFORE fire peak. Evacuation transports start moving toward high ground.",
+    description: "Village Gateway broadcasts emergency alert BEFORE fire peak. Evacuation transports start moving toward high ground.",
     action: 'EVACUATE_VILLAGE'
   },
   {
