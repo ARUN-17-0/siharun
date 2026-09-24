@@ -195,18 +195,25 @@ export class SimulationEngine {
     // 1. Advance staged disaster and village evacuation timeline
     if (this.scenario !== 'NORMAL' && !this.demoRunning) {
       this.disasterPhaseTimer += dtSec;
-      if (this.disasterPhase === 2 && this.disasterPhaseTimer >= 4.0) {
+
+      // Realistic pacing: Floods evolve over extended time (~60-80s total)
+      const phase2Wait = this.scenario === 'FLOOD' ? 18.0 : 6.0;
+      const evacRate = this.scenario === 'FLOOD' ? 0.022 : 0.08; // ~45s gradual evacuation for flood
+
+      if (this.disasterPhase === 2 && this.disasterPhaseTimer >= phase2Wait) {
         // Warning was issued -> Village residents begin active evacuation
         this.disasterPhase = 3;
+        this.disasterPhaseTimer = 0;
         this.evacuationState = 'EVACUATING';
         this.phaseNarration = 'Phase 3: Village Evacuation Active. Personnel and vehicles moving along dirt road to high ground.';
         this.addLog('EARLY_WARNING', 'WARN', 'Evacuation Active', 'Village evacuation underway. Personnel moving along safe route to high ground.');
       } else if (this.disasterPhase === 3) {
         // Evacuate village to safety
-        this.evacuationProgress = Math.min(1.0, this.evacuationProgress + dtSec * 0.12);
+        this.evacuationProgress = Math.min(1.0, this.evacuationProgress + dtSec * evacRate);
         if (this.evacuationProgress >= 1.0) {
           // Phase 3 -> Phase 4: Village Safe, Disaster Hits Peak
           this.disasterPhase = 4;
+          this.disasterPhaseTimer = 0;
           this.evacuationState = 'EVACUATED_SAFE';
           this.phaseNarration = 'Phase 4: Village Evacuated Safely. Peak disaster impact reached in sector.';
           this.addLog('EARLY_WARNING', 'SUCCESS', 'Village Evacuation Complete', 'All village personnel safely reached high ground safety perimeter.');
@@ -226,7 +233,8 @@ export class SimulationEngine {
       const def = INITIAL_NODE_DEFINITIONS.find(d => d.id === node.id)!;
       const prevData = this.prevSensorData.get(node.id) || node.sensorData;
 
-      const phaseProgress = Math.min(1.0, this.disasterPhaseTimer / 6.0);
+      const phaseDenominator = this.scenario === 'FLOOD' ? 24.0 : 6.0;
+      const phaseProgress = Math.min(1.0, this.disasterPhaseTimer / phaseDenominator);
 
       const { sensorData, temporalFeatures, health } = updateNodeSensors(
         node.sensorData,

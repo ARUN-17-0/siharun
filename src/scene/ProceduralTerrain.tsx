@@ -491,8 +491,8 @@ export const ProceduralTerrain: React.FC = () => {
   useFrame((state) => {
     if (waterRef.current) {
       const time = state.clock.getElapsedTime();
-      // Subtle organic wave undulation
-      waterRef.current.position.y = 0.95 + Math.sin(time * 1.5) * 0.04;
+      // Gentle, slow organic wave undulation
+      waterRef.current.position.y = 0.95 + Math.sin(time * 0.65) * 0.025;
     }
   });
 

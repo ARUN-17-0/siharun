@@ -41,7 +41,7 @@ export const DynamicWeather3D: React.FC<DynamicWeather3DProps> = ({
       positions[idx + 4] = y - len;
       positions[idx + 5] = z + 0.12;
 
-      velocities[i] = 26.0 + Math.random() * 18.0; // Rapid downward speed
+      velocities[i] = 14.0 + Math.random() * 8.0; // Realistic steady mountain rain speed
     }
 
     return { rainPositions: positions, rainVelocities: velocities, rainCount: count };

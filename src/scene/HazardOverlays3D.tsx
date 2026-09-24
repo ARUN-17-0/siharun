@@ -173,28 +173,29 @@ export const HazardOverlays3D: React.FC<HazardOverlays3DProps> = ({
       }
     }
 
-    // 2. Flood water plane: Only reaches high inundation in Phase 4 (after village evacuates!)
+    // 2. Flood water plane: Rises very slowly, steadily and realistically
     if (floodWaterRef.current && scenario === 'FLOOD') {
       let targetWaterY = 0.95;
-      if (disasterPhase === 1) targetWaterY = 1.35;
-      else if (disasterPhase === 2) targetWaterY = 1.95;
-      else if (disasterPhase === 3) targetWaterY = 2.65; // High river, evacuation in progress
-      else if (disasterPhase >= 4) targetWaterY = 3.65;  // Peak overflow inundation!
+      if (disasterPhase === 1) targetWaterY = 1.20;
+      else if (disasterPhase === 2) targetWaterY = 1.65;
+      else if (disasterPhase === 3) targetWaterY = 2.35; // High river, evacuation in progress
+      else if (disasterPhase >= 4) targetWaterY = 3.25;  // Peak overflow inundation!
 
+      // Slow, majestic, realistic water rise rate (0.14 instead of 0.95)
       floodWaterRef.current.position.y = THREE.MathUtils.lerp(
         floodWaterRef.current.position.y,
         targetWaterY,
-        delta * 0.95
+        delta * 0.14
       );
     }
 
-    // Bobbing driftwood in flood
+    // Bobbing driftwood in flood (slow, gentle river bobbing)
     if (driftwoodRef.current && scenario === 'FLOOD') {
       driftwoodRef.current.children.forEach((child, idx) => {
         const mesh = child as THREE.Mesh;
         const currentWaterY = floodWaterRef.current ? floodWaterRef.current.position.y : 1.2;
-        mesh.position.y = currentWaterY - 0.05 + Math.sin(time * 2.0 + idx) * 0.08;
-        mesh.rotation.z = Math.sin(time * 1.5 + idx) * 0.12;
+        mesh.position.y = currentWaterY - 0.05 + Math.sin(time * 0.8 + idx) * 0.04;
+        mesh.rotation.z = Math.sin(time * 0.6 + idx) * 0.06;
       });
     }
 

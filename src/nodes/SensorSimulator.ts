@@ -111,41 +111,41 @@ export function updateNodeSensors(
   if (scenario === 'FLOOD') {
     if (def.zone === 'RIVER_VALLEY' || proximity > 0.05) {
       if (disasterPhase === 1) {
-        // Phase 1: Incipient rain & catchment rise rate starts climbing
-        targetRainfall = 45.0 * phaseProgress;
+        // Phase 1: Incipient inflow anomaly detected at River Weir N4
+        targetRainfall = 35.0 * phaseProgress;
         targetHumidity = 75.0;
         targetSoilMoisture = 65.0;
         if (def.zone === 'RIVER_VALLEY') {
-          targetWaterLevel = 1.2 + 1.2 * phaseProgress; // Rises from 1.2m to 2.4m
+          targetWaterLevel = 1.2 + 0.8 * phaseProgress; // Rises gradually from 1.2m to 2.0m
         }
         targetCamera.floodConfidence = 0.35 * phaseProgress;
       } else if (disasterPhase === 2) {
-        // Phase 2: Warning Dispatched across mesh
-        targetRainfall = 65.0;
+        // Phase 2: Warning Dispatched across mesh (sirens active)
+        targetRainfall = 55.0;
         targetHumidity = 85.0;
         targetSoilMoisture = 78.0;
         if (def.zone === 'RIVER_VALLEY') {
-          targetWaterLevel = 2.4 + 0.8 * phaseProgress; // 2.4m to 3.2m
+          targetWaterLevel = 2.0 + 0.8 * phaseProgress; // 2.0m to 2.8m (approaching 3.0m warning stage)
         }
         targetCamera.floodConfidence = 0.55;
       } else if (disasterPhase === 3) {
-        // Phase 3: Village Evacuation Active (water is high, but not yet peak overflow)
-        targetRainfall = 80.0;
+        // Phase 3: Village Evacuation Active (water rises past warning mark 3.0m towards danger level 3.8m)
+        targetRainfall = 75.0;
         targetHumidity = 92.0;
         targetSoilMoisture = 88.0;
         if (def.zone === 'RIVER_VALLEY') {
-          targetWaterLevel = 3.2 + 1.6 * phaseProgress; // 3.2m to 4.8m
+          targetWaterLevel = 2.8 + 1.2 * phaseProgress; // 2.8m to 4.0m over gradual evacuation
         }
         targetCamera.floodConfidence = 0.75;
       } else if (disasterPhase >= 4) {
         // Phase 4: Peak Inundation (Only AFTER village is evacuated)
-        targetRainfall = 110.0;
-        targetHumidity = 98.0;
-        targetSoilMoisture = 98.0;
+        targetRainfall = 95.0;
+        targetHumidity = 96.0;
+        targetSoilMoisture = 95.0;
         if (def.zone === 'RIVER_VALLEY') {
-          targetWaterLevel = 4.8 + 2.8 * phaseProgress; // Surges up to 7.6m!
+          targetWaterLevel = 4.0 + 1.8 * phaseProgress; // Slow crest to 5.8m
         }
-        targetCamera.floodConfidence = 0.96;
+        targetCamera.floodConfidence = 0.94;
       }
     }
   } else if (scenario === 'FIRE' || scenario === 'COMPLETE_DEMO') {
