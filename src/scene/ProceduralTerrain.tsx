@@ -28,41 +28,31 @@ const ConiferTree: React.FC<ConiferTreeProps> = ({ position, scale = 1, species 
         // Deciduous Birch foliage (organic leafy masses)
         <group position={[0, 1.8, 0]}>
           <mesh position={[0, 0.4, 0]} castShadow>
-            <sphereGeometry args={[0.9, 7, 7]} />
+            <sphereGeometry args={[0.9, 6, 6]} />
             <meshStandardMaterial color="#4d7c0f" roughness={0.82} />
           </mesh>
-          <mesh position={[0.3, 0.8, 0.2]} castShadow>
-            <sphereGeometry args={[0.65, 6, 6]} />
+          <mesh position={[0.3, 0.8, 0.2]}>
+            <sphereGeometry args={[0.65, 5, 5]} />
             <meshStandardMaterial color="#65a30d" roughness={0.8} />
           </mesh>
         </group>
       ) : (
-        // Conifer Pine / Alpine Fir (multi-tier needle tiers)
+        // Conifer Pine / Alpine Fir (3-tier realistic needle foliage)
         <group position={[0, 1.3, 0]}>
-          {/* Tier 1 (Lowest broad tier) */}
-          <mesh position={[0, 0.35, 0]} castShadow>
-            <coneGeometry args={[1.5, 1.3, 8]} />
+          {/* Tier 1 (Lowest broad tier - casts primary ground shadow) */}
+          <mesh position={[0, 0.4, 0]} castShadow>
+            <coneGeometry args={[1.5, 1.4, 7]} />
             <meshStandardMaterial color="#142c16" roughness={0.85} />
           </mesh>
-          {/* Tier 2 */}
-          <mesh position={[0, 1.0, 0]} rotation={[0, 0.4, 0]} castShadow>
-            <coneGeometry args={[1.25, 1.2, 8]} />
-            <meshStandardMaterial color="#1a381d" roughness={0.85} />
+          {/* Tier 2 (Mid tier) */}
+          <mesh position={[0, 1.25, 0]} rotation={[0, 0.5, 0]}>
+            <coneGeometry args={[1.15, 1.3, 7]} />
+            <meshStandardMaterial color="#1c3b1e" roughness={0.85} />
           </mesh>
-          {/* Tier 3 */}
-          <mesh position={[0, 1.65, 0]} rotation={[0, 0.8, 0]} castShadow>
-            <coneGeometry args={[0.95, 1.1, 7]} />
-            <meshStandardMaterial color="#214524" roughness={0.85} />
-          </mesh>
-          {/* Tier 4 */}
-          <mesh position={[0, 2.25, 0]} rotation={[0, 1.2, 0]} castShadow>
-            <coneGeometry args={[0.65, 0.95, 7]} />
-            <meshStandardMaterial color="#2a572e" roughness={0.85} />
-          </mesh>
-          {/* Tier 5 (Top spire) */}
-          <mesh position={[0, 2.75, 0]} castShadow>
-            <coneGeometry args={[0.38, 0.75, 6]} />
-            <meshStandardMaterial color="#356b3a" roughness={0.85} />
+          {/* Tier 3 (Top spire) */}
+          <mesh position={[0, 2.1, 0]} rotation={[0, 1.0, 0]}>
+            <coneGeometry args={[0.68, 1.15, 6]} />
+            <meshStandardMaterial color="#2d5e32" roughness={0.85} />
           </mesh>
         </group>
       )}

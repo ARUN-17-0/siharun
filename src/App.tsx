@@ -30,16 +30,21 @@ export const App: React.FC = () => {
 
   const lastTimeRef = useRef<number>(performance.now());
 
-  // Subscribe to engine state updates
+  // Subscribe to engine state updates with 50ms (~20Hz) throttling to eliminate CPU starvation
   useEffect(() => {
+    let lastFlushTime = 0;
     const unsubscribe = simulationEngine.subscribe(() => {
-      setNodes([...simulationEngine.getNodeStates()]);
-      setNetwork({ ...simulationEngine.getNetworkState() });
-      setPacketAnimations([...simulationEngine.getPacketAnimations()]);
-      setEventLogs([...simulationEngine.getEventLogs()]);
-      setPacketLogs([...simulationEngine.getPacketLogs()]);
-      setElectionLogs([...simulationEngine.getElectionLogs()]);
-      setDemoStatus(simulationEngine.getDemoStatus());
+      const now = performance.now();
+      if (now - lastFlushTime >= 50) {
+        lastFlushTime = now;
+        setNodes([...simulationEngine.getNodeStates()]);
+        setNetwork({ ...simulationEngine.getNetworkState() });
+        setPacketAnimations([...simulationEngine.getPacketAnimations()]);
+        setEventLogs([...simulationEngine.getEventLogs()]);
+        setPacketLogs([...simulationEngine.getPacketLogs()]);
+        setElectionLogs([...simulationEngine.getElectionLogs()]);
+        setDemoStatus(simulationEngine.getDemoStatus());
+      }
     });
 
     return unsubscribe;
@@ -64,27 +69,42 @@ export const App: React.FC = () => {
     return () => cancelAnimationFrame(animId);
   }, []);
 
+  const flushStateImmediately = () => {
+    setNodes([...simulationEngine.getNodeStates()]);
+    setNetwork({ ...simulationEngine.getNetworkState() });
+    setPacketAnimations([...simulationEngine.getPacketAnimations()]);
+    setEventLogs([...simulationEngine.getEventLogs()]);
+    setPacketLogs([...simulationEngine.getPacketLogs()]);
+    setElectionLogs([...simulationEngine.getElectionLogs()]);
+    setDemoStatus(simulationEngine.getDemoStatus());
+  };
+
   // Handlers
   const handleSelectScenario = (scenario: ScenarioType) => {
     simulationEngine.setScenario(scenario);
+    flushStateImmediately();
   };
 
   const handleTriggerHandover = () => {
     simulationEngine.triggerGracefulHandover();
+    flushStateImmediately();
   };
 
   const handleKillMaster = () => {
     simulationEngine.killMaster();
+    flushStateImmediately();
   };
 
   const handleReset = () => {
     simulationEngine.resetSimulation();
     setSelectedNodeId(1);
     setCameraPreset('ISOMETRIC');
+    flushStateImmediately();
   };
 
   const handleStopDemo = () => {
     simulationEngine.resetSimulation();
+    flushStateImmediately();
   };
 
   const selectedNode = nodes.find(n => n.id === selectedNodeId);

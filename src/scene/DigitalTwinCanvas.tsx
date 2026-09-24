@@ -85,6 +85,8 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
   cameraPreset
 }) => {
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const prevPresetRef = useRef<string | undefined>(undefined);
+  const prevSelectedNodeIdRef = useRef<number | null | undefined>(undefined);
 
   // Dynamic weather-reactive parameters
   const isRain = scenario === 'FLOOD' || scenario === 'LANDSLIDE';
@@ -98,44 +100,66 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
   const sunColor = isRain ? '#cbd5e1' : isFire ? '#fed7aa' : '#fffbeb';
   const ambientIntensity = isRain ? 0.28 : isFire ? 0.48 : 0.42;
 
-  // Handle camera view preset transitions
+  // Handle camera view preset transitions ONLY when preset changes or user explicitly selects a new node
   useEffect(() => {
     if (!controlsRef.current) return;
     const controls = controlsRef.current;
 
-    if (cameraPreset === 'STATION_POV' && selectedNodeId) {
+    const presetChanged = prevPresetRef.current !== cameraPreset;
+    const selectionChanged = prevSelectedNodeIdRef.current !== selectedNodeId;
+
+    prevPresetRef.current = cameraPreset;
+    prevSelectedNodeIdRef.current = selectedNodeId;
+
+    if (presetChanged && cameraPreset === 'STATION_POV' && selectedNodeId) {
       // First-person perspective looking out from selected node's camera
       const selected = nodes.find(n => n.id === selectedNodeId);
       if (selected) {
         const [nx, ny, nz] = selected.position3D;
         controls.object.position.set(nx - 0.25, ny + 0.85, nz + 0.2);
         controls.target.set(nx + 18, ny - 1.5, nz + 14);
+        controls.update();
       }
-    } else if (cameraPreset === 'TOP_DOWN') {
-      controls.object.position.set(0, 72, 0.1);
+    } else if (presetChanged && cameraPreset === 'TOP_DOWN') {
+      controls.object.position.set(0, 75, 0.1);
       controls.target.set(0, 0, 0);
-    } else if (cameraPreset === 'GATEWAY_POV') {
+      controls.update();
+    } else if (presetChanged && cameraPreset === 'GATEWAY_POV') {
       controls.object.position.set(GATEWAY_POSITION[0] + 12, GATEWAY_POSITION[1] + 10, GATEWAY_POSITION[2] + 12);
       controls.target.set(GATEWAY_POSITION[0], GATEWAY_POSITION[1] + 2, GATEWAY_POSITION[2]);
-    } else if (selectedNodeId) {
+      controls.update();
+    } else if (presetChanged && (cameraPreset === 'ISOMETRIC' || cameraPreset === 'RESET')) {
+      controls.object.position.set(38, 36, 42);
+      controls.target.set(0, 2, 0);
+      controls.update();
+    } else if (selectionChanged && selectedNodeId !== null && selectedNodeId !== undefined && selectedNodeId > 0) {
+      // User explicitly clicked a node: center target on that node ONCE
       const selected = nodes.find(n => n.id === selectedNodeId);
       if (selected) {
         controls.target.set(...selected.position3D);
+        controls.update();
       }
-    } else {
-      // Default Isometric
-      controls.object.position.set(38, 36, 42);
-      controls.target.set(0, 2, 0);
     }
-    controls.update();
-  }, [cameraPreset, selectedNodeId, nodes]);
+  }, [cameraPreset, selectedNodeId]); // Removed `nodes` from dependencies to prevent 60fps camera lock!
+
+  const handleResetCamera = () => {
+    if (!controlsRef.current) return;
+    controlsRef.current.object.position.set(38, 36, 42);
+    controlsRef.current.target.set(0, 2, 0);
+    controlsRef.current.update();
+  };
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#07090e]">
       <Canvas
         shadows
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
-        onPointerMissed={() => onSelectNode(0)} // Deselect on background click
+        dpr={[1, 1.5]}
+        gl={{ 
+          antialias: true, 
+          powerPreference: 'high-performance',
+          stencil: false,
+          depth: true
+        }}
       >
         <PerspectiveCamera makeDefault position={[38, 36, 42]} fov={45} />
         <OrbitControls
@@ -143,9 +167,13 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
           makeDefault
           enableDamping
           dampingFactor={0.06}
-          maxPolarAngle={Math.PI / 2 - 0.05} // Don't clip under ground
-          minDistance={2}
-          maxDistance={120}
+          screenSpacePanning={true}
+          maxPolarAngle={Math.PI / 2 + 0.05}
+          minDistance={1.2}
+          maxDistance={240}
+          rotateSpeed={0.8}
+          panSpeed={1.0}
+          zoomSpeed={1.2}
         />
 
         {/* Atmospheric Sky Shader */}
@@ -166,14 +194,14 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
           intensity={sunIntensity}
           color={sunColor}
           castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
           shadow-camera-far={160}
           shadow-camera-left={-55}
           shadow-camera-right={55}
           shadow-camera-top={55}
           shadow-camera-bottom={-55}
-          shadow-bias={-0.0001}
+          shadow-bias={-0.0003}
         />
 
         {/* Sky / Ground hemisphere fill light */}
@@ -229,11 +257,19 @@ export const DigitalTwinCanvas: React.FC<DigitalTwinCanvasProps> = ({
       </Canvas>
 
       {/* 3D Viewport Controls HUD overlay */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2.5 bg-slate-900/60 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-700/40 shadow-lg text-xs font-sans text-slate-300">
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2.5 bg-slate-900/70 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-700/40 shadow-lg text-xs font-sans text-slate-300">
         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block animate-pulse" />
         <span className="font-medium tracking-wide text-slate-200">3D DIGITAL TWIN VIEWPORT</span>
         <span className="text-slate-600">|</span>
         <span className="text-slate-400 font-normal">Orbit: Left-drag • Pan: Right-drag • Zoom: Scroll</span>
+        <span className="text-slate-600">|</span>
+        <button
+          onClick={handleResetCamera}
+          className="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-sky-400 hover:text-sky-300 border border-slate-700/60 transition-colors text-[11px] font-medium"
+          title="Reset camera to default isometric view"
+        >
+          Reset View
+        </button>
       </div>
     </div>
   );

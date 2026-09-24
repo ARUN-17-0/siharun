@@ -212,10 +212,18 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
         {/* Camera Preset Buttons (3D Twin, Station POV, GIS Topo Map) */}
         <div className="flex items-center bg-slate-800/50 border border-slate-700/50 p-0.5 rounded-lg text-xs font-medium">
           <button
-            onClick={() => onCameraPreset('ISOMETRIC')}
+            onClick={() => {
+              if (activeCamera === 'ISOMETRIC') {
+                onCameraPreset('RESET' as any);
+                setTimeout(() => onCameraPreset('ISOMETRIC'), 50);
+              } else {
+                onCameraPreset('ISOMETRIC');
+              }
+            }}
             className={`px-2.5 py-1 rounded-md transition-colors ${
               activeCamera === 'ISOMETRIC' ? 'bg-sky-600 text-white font-semibold shadow-sm' : 'text-slate-300 hover:text-white'
             }`}
+            title="Free Orbit 3D Digital Twin (Click to reset view)"
           >
             3D Twin
           </button>

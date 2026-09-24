@@ -55,9 +55,6 @@ export const PacketStream3D: React.FC<PacketStream3DProps> = ({ animations }) =>
                 depthWrite={false} 
               />
             </mesh>
-
-            {/* Mini Light source for nighttime / dark realism */}
-            <pointLight color={color} intensity={2.0} distance={4.0} />
           </group>
         );
       })}
