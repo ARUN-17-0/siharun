@@ -169,6 +169,7 @@ export const App: React.FC = () => {
           currentMasterId={network.currentMasterId}
           scenario={network.scenario}
           disasterPhase={network.disasterPhase}
+          onSelectNode={(id) => setSelectedNodeId(id)}
         />
       </div>
 

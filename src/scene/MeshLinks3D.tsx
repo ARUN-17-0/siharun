@@ -160,6 +160,31 @@ export const MeshLinks3D: React.FC<MeshLinks3DProps> = ({
     return segments;
   }, [nodes, nodeMap, currentMasterId, selectedNodeId]);
 
+  // 3. Highlighted neighbor beams for selected node (connects selected node to all its immediate neighbors)
+  const selectedNeighborBeams = useMemo(() => {
+    if (!selectedNodeId) return [];
+    const selNode = nodes.find(n => n.id === selectedNodeId);
+    if (!selNode || !selNode.isAlive) return [];
+
+    const pu = nodeMap.get(selectedNodeId);
+    if (!pu) return [];
+
+    const beams: { from: [number, number, number]; to: [number, number, number]; color: string; radius: number; opacity: number }[] = [];
+    for (const neighborId of selNode.neighbors) {
+      const pv = nodeMap.get(neighborId);
+      if (pv) {
+        beams.push({
+          from: pu,
+          to: pv,
+          color: "#38bdf8",
+          radius: 0.05,
+          opacity: 0.9
+        });
+      }
+    }
+    return beams;
+  }, [selectedNodeId, nodes, nodeMap]);
+
   // Line segments geometry for background mesh potential links
   const neighborGeometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
@@ -173,14 +198,26 @@ export const MeshLinks3D: React.FC<MeshLinks3DProps> = ({
 
   return (
     <group>
-      {/* Background Mesh Topology (Subtle potential links) */}
+      {/* Background Mesh Topology (Clearly visible sub-GHz LoRa grid lines) */}
       {neighborSegments.length > 0 && (
         <lineSegments geometry={neighborGeometry}>
-          <lineBasicMaterial color="#1e293b" transparent opacity={0.35} depthWrite={false} />
+          <lineBasicMaterial color="#0284c7" transparent opacity={0.5} depthWrite={false} />
         </lineSegments>
       )}
 
-      {/* Active Dijkstra Routes Rendered as 3D Glowing Beams */}
+      {/* Selected Node Direct Neighbor Beams (Shows all nodes connected to the selected node) */}
+      {selectedNeighborBeams.map((b, idx) => (
+        <BeamLink
+          key={`selected-neighbor-${idx}`}
+          from={b.from}
+          to={b.to}
+          color={b.color}
+          radius={b.radius}
+          opacity={b.opacity}
+        />
+      ))}
+
+      {/* Active Multi-Hop Routes Rendered as Glowing 3D Beams */}
       {activeRouteSegments.map((seg, idx) => (
         <BeamLink
           key={`active-route-${idx}`}

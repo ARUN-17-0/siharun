@@ -24,13 +24,15 @@ interface RightInspectorProps {
   currentMasterId: number;
   scenario?: ScenarioType;
   disasterPhase?: number;
+  onSelectNode?: (nodeId: number) => void;
 }
 
 export const RightInspector: React.FC<RightInspectorProps> = ({
   selectedNode,
   currentMasterId,
   scenario = 'NORMAL',
-  disasterPhase = 1
+  disasterPhase = 1,
+  onSelectNode
 }) => {
   if (!selectedNode) {
     return (
@@ -315,6 +317,33 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
               <strong className="text-sky-300 font-medium font-mono text-xs">
                 {selectedNode.nextHop === 0 ? 'Village Gateway (Direct)' : selectedNode.nextHop ? `Node ${selectedNode.nextHop}` : '—'}
               </strong>
+            </div>
+
+            {/* Connected Mesh Neighbors */}
+            <div>
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span>Direct Mesh Neighbors:</span>
+                <span className="text-sky-400 font-mono text-[10px]">
+                  {selectedNode.neighbors.length} reachable
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {selectedNode.neighbors.length === 0 ? (
+                  <span className="text-slate-500 italic text-[10px]">No active neighbors in range</span>
+                ) : (
+                  selectedNode.neighbors.map(nId => (
+                    <button
+                      key={`neighbor-badge-${nId}`}
+                      onClick={() => onSelectNode && onSelectNode(nId)}
+                      className="bg-slate-900/80 hover:bg-sky-950/80 text-sky-300 hover:text-sky-200 border border-slate-700/60 hover:border-sky-500/50 px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 transition-all cursor-pointer"
+                      title={`Inspect connected neighbor Node ${nId}`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                      Node {nId}
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
 
             <div>

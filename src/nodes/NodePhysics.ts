@@ -91,7 +91,7 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
     id: 2,
     name: "North Canopy N2",
     zone: "FOREST_UPPER",
-    position3D: [-12, Math.round((getTerrainHeight(-12, -26) + 0.3) * 10) / 10, -26], // ~11.0m
+    position3D: [-16, Math.round((getTerrainHeight(-16, -22) + 0.3) * 10) / 10, -22], // ~9.6m
     gps: { lat: 30.1685, lng: 79.1143, alt: 1840 },
     description: "Dense pine canopy monitor for forest thermal & combustible smoke signatures."
   },
@@ -161,11 +161,11 @@ export const INITIAL_NODE_DEFINITIONS: NodePositionDefinition[] = [
   }
 ];
 
-// Maximum RF transmission distance in simulation 3D units (equivalent to ~1.4 km)
-export const LORA_MAX_RANGE = 25.0;
+// Maximum RF transmission distance in simulation 3D units (equivalent to ~1.8 km)
+export const LORA_MAX_RANGE = 30.0;
 
 // Gateway communication range (Gateway has a 12dBi omni antenna with extended range)
-export const GATEWAY_MAX_RANGE = 28.0;
+export const GATEWAY_MAX_RANGE = 32.0;
 
 export function calculateDistance3D(
   p1: [number, number, number], 
