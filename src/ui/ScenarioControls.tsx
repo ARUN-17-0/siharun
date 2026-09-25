@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Flame, 
   Droplets, 
@@ -7,9 +6,10 @@ import {
   RotateCcw, 
   ArrowRightLeft, 
   Skull, 
-  Zap 
+  Zap,
+  Crown
 } from 'lucide-react';
-import { ScenarioType } from '../types';
+import { ScenarioType, NodeState } from '../types';
 
 interface ScenarioControlsProps {
   currentScenario: ScenarioType;
@@ -18,6 +18,9 @@ interface ScenarioControlsProps {
   onKillMaster: () => void;
   onReset: () => void;
   isDemoRunning: boolean;
+  nodes?: NodeState[];
+  currentMasterId?: number;
+  onSelectMaster?: (nodeId: number) => void;
 }
 
 export const ScenarioControls: React.FC<ScenarioControlsProps> = ({
@@ -26,7 +29,10 @@ export const ScenarioControls: React.FC<ScenarioControlsProps> = ({
   onTriggerHandover,
   onKillMaster,
   onReset,
-  isDemoRunning
+  isDemoRunning,
+  nodes,
+  currentMasterId,
+  onSelectMaster
 }) => {
   return (
     <div className="bg-[#0c1322]/90 border border-slate-800/80 p-2 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-2 text-xs font-sans">
@@ -95,6 +101,34 @@ export const ScenarioControls: React.FC<ScenarioControlsProps> = ({
 
       {/* Network Handover, Kill, Reset, Demo */}
       <div className="flex items-center gap-2 flex-wrap">
+        {/* Master Node Selection Dropdown */}
+        {nodes && currentMasterId !== undefined && onSelectMaster && (
+          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="text-[11px] text-amber-300 font-semibold uppercase tracking-wider whitespace-nowrap">
+              Master:
+            </span>
+            <select
+              value={currentMasterId}
+              onChange={(e) => onSelectMaster(Number(e.target.value))}
+              disabled={isDemoRunning}
+              title="Choose active Master Node for mesh coordination"
+              className="bg-[#0b1120] border border-amber-500/40 text-amber-200 text-xs font-mono font-medium rounded px-2 py-0.5 outline-none cursor-pointer hover:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-colors"
+            >
+              {nodes.map(n => (
+                <option 
+                  key={`master-opt-${n.id}`} 
+                  value={n.id} 
+                  disabled={!n.isAlive} 
+                  className="bg-[#0b1120] text-slate-100 py-1"
+                >
+                  Node {n.id} {n.isAlive ? '' : '(Offline)'} — {n.name.replace(/N\d+/, '').replace(/\(Master\)/, '').trim()}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Trigger Handover */}
         <button
           onClick={onTriggerHandover}

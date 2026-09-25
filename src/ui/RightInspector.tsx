@@ -25,6 +25,7 @@ interface RightInspectorProps {
   scenario?: ScenarioType;
   disasterPhase?: number;
   onSelectNode?: (nodeId: number) => void;
+  onSetMasterNode?: (nodeId: number) => void;
 }
 
 export const RightInspector: React.FC<RightInspectorProps> = ({
@@ -32,7 +33,8 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
   currentMasterId,
   scenario = 'NORMAL',
   disasterPhase = 1,
-  onSelectNode
+  onSelectNode,
+  onSetMasterNode
 }) => {
   if (!selectedNode) {
     return (
@@ -75,21 +77,32 @@ export const RightInspector: React.FC<RightInspectorProps> = ({
             </div>
           </div>
 
-          <div className="text-right">
+          <div className="flex flex-col items-end gap-1.5">
             {isMaster ? (
-              <span className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-medium shadow-sm">
-                <Crown className="w-3 h-3 text-amber-400" />
+              <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-md text-[10px] font-semibold shadow-sm tracking-wide">
+                <Crown className="w-3.5 h-3.5 text-amber-400" />
                 MASTER NODE
               </span>
+            ) : selectedNode.isAlive ? (
+              <button
+                onClick={() => onSetMasterNode && onSetMasterNode(selectedNode.id)}
+                className="inline-flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 hover:border-amber-400 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all active:scale-95 shadow-sm cursor-pointer"
+                title={`Designate Node ${selectedNode.id} as the regional Master Node`}
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-400" />
+                <span>Make Master Node</span>
+              </button>
             ) : (
-              <span className={`text-xs font-medium ${
-                aiResult.status === 'CRITICAL' ? 'text-rose-400' :
-                aiResult.status === 'WARNING' ? 'text-amber-400' :
-                aiResult.status === 'WATCH' ? 'text-sky-400' : 'text-emerald-400'
-              }`}>
-                Status: {aiResult.status}
-              </span>
+              <span className="text-[10px] font-mono text-slate-500">OFFLINE</span>
             )}
+
+            <span className={`text-[11px] font-medium ${
+              aiResult.status === 'CRITICAL' ? 'text-rose-400' :
+              aiResult.status === 'WARNING' ? 'text-amber-400' :
+              aiResult.status === 'WATCH' ? 'text-sky-400' : 'text-emerald-400'
+            }`}>
+              Status: {aiResult.status}
+            </span>
           </div>
         </div>
 

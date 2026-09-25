@@ -597,6 +597,77 @@ export class SimulationEngine {
     }
   }
 
+  /**
+   * Manually designate a specific node as the Master Node
+   */
+  public setMasterNode(newMasterId: number) {
+    if (newMasterId === this.currentMasterId) return;
+
+    const targetNode = this.nodeStates.find(n => n.id === newMasterId);
+    if (!targetNode || !targetNode.isAlive) {
+      this.addLog(
+        'MASTER',
+        'DANGER',
+        `Master Designation Failed`,
+        `Cannot set Node ${newMasterId} as Master: Node is offline or unreachable.`
+      );
+      return;
+    }
+
+    const oldId = this.currentMasterId;
+    this.currentMasterId = newMasterId;
+
+    const aliveSet = new Set(this.nodeStates.filter(n => n.isAlive).map(n => n.id));
+    const candidateScores = this.nodeStates
+      .filter(n => n.isAlive)
+      .map(node => calculateCandidateScore(node, this.nodeStates, aliveSet))
+      .sort((a, b) => b.totalScore - a.totalScore);
+
+    const electionResult: MasterElectionResult = {
+      oldMasterId: oldId,
+      newMasterId: newMasterId,
+      reason: `Operator designated Node ${newMasterId} as Regional Master Node`,
+      triggerType: 'GRACEFUL_HANDOVER',
+      candidateScores,
+      timestamp: Date.now()
+    };
+    this.electionLogs.unshift(electionResult);
+
+    // Multi-hop route for handover packet if old node is alive
+    const oldNode = this.nodeStates.find(n => n.id === oldId);
+    if (oldNode && oldNode.isAlive) {
+      let handoverRoute = [oldId, newMasterId];
+      if (this.currentRouting?.adjacencyList) {
+        const dResult = dijkstra(oldId, newMasterId, this.currentRouting.adjacencyList);
+        if (dResult && dResult.path && dResult.path.length > 1) {
+          handoverRoute = dResult.path;
+        }
+      }
+      const nextHop = handoverRoute[1] || newMasterId;
+      const handoverPkt = createHandoverPacket(oldId, newMasterId, `Operator designated N${newMasterId} as Master`, nextHop);
+      handoverPkt.remainingPath = handoverRoute.slice(1);
+      this.packetLogs.unshift(handoverPkt);
+      this.spawnPacketAnimation(oldId, nextHop, handoverPkt);
+    } else {
+      const winnerPkt = createElectionWinnerPacket(newMasterId, 2);
+      this.packetLogs.unshift(winnerPkt);
+      for (const neighborId of targetNode.neighbors) {
+        this.spawnPacketAnimation(newMasterId, neighborId, winnerPkt);
+      }
+    }
+
+    this.recomputeTopology();
+
+    this.addLog(
+      'MASTER',
+      'SUCCESS',
+      `Master Node Designated: Node ${newMasterId}`,
+      `Node ${newMasterId} (${targetNode.name}) is now the active Master Node. All telemetry and multi-hop paths re-routed.`
+    );
+
+    this.notify();
+  }
+
   public setScenario(scenario: ScenarioType) {
     this.scenario = scenario;
     this.demoRunning = false;

@@ -16,13 +16,15 @@ interface LeftNodePanelProps {
   selectedNodeId: number | null;
   currentMasterId: number;
   onSelectNode: (id: number) => void;
+  onSetMasterNode?: (id: number) => void;
 }
 
 export const LeftNodePanel: React.FC<LeftNodePanelProps> = ({
   nodes,
   selectedNodeId,
   currentMasterId,
-  onSelectNode
+  onSelectNode,
+  onSetMasterNode
 }) => {
   const getStatusBadge = (node: NodeState) => {
     if (!node.isAlive) {
@@ -98,7 +100,7 @@ export const LeftNodePanel: React.FC<LeftNodePanelProps> = ({
             <div
               key={`node-card-${node.id}`}
               onClick={() => onSelectNode(node.id)}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border transition-all cursor-pointer group ${
                 isSelected
                   ? 'bg-sky-500/10 border-sky-500/50 shadow-sm ring-1 ring-sky-500/30'
                   : isMaster
@@ -114,15 +116,27 @@ export const LeftNodePanel: React.FC<LeftNodePanelProps> = ({
                   <span className="font-mono font-semibold text-xs text-sky-300 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/60">
                     N{node.id}
                   </span>
-                  <span className="text-xs font-medium text-slate-200 truncate max-w-[110px]">
+                  <span className="text-xs font-medium text-slate-200 truncate max-w-[100px]">
                     {node.name.replace(/N\d+/, '').trim()}
                   </span>
-                  {isMaster && (
+                  {isMaster ? (
                     <span className="flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded text-[9px] font-medium uppercase">
                       <Crown className="w-2.5 h-2.5 text-amber-400" />
                       MASTER
                     </span>
-                  )}
+                  ) : node.isAlive && onSetMasterNode ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSetMasterNode(node.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:!opacity-100 flex items-center gap-1 text-amber-400 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 hover:border-amber-400 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer"
+                      title={`Set Node ${node.id} as Master Node`}
+                    >
+                      <Crown className="w-2.5 h-2.5" />
+                      <span>Set Master</span>
+                    </button>
+                  ) : null}
                 </div>
                 {getStatusBadge(node)}
               </div>

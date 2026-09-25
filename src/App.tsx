@@ -95,6 +95,11 @@ export const App: React.FC = () => {
     flushStateImmediately();
   };
 
+  const handleSetMasterNode = (nodeId: number) => {
+    simulationEngine.setMasterNode(nodeId);
+    flushStateImmediately();
+  };
+
   const handleReset = () => {
     simulationEngine.resetSimulation();
     setSelectedNodeId(5);
@@ -127,6 +132,9 @@ export const App: React.FC = () => {
           onKillMaster={handleKillMaster}
           onReset={handleReset}
           isDemoRunning={demoStatus.running}
+          nodes={nodes}
+          currentMasterId={network.currentMasterId}
+          onSelectMaster={handleSetMasterNode}
         />
       </div>
 
@@ -138,6 +146,7 @@ export const App: React.FC = () => {
           selectedNodeId={selectedNodeId}
           currentMasterId={network.currentMasterId}
           onSelectNode={(id) => setSelectedNodeId(id)}
+          onSetMasterNode={handleSetMasterNode}
         />
 
         {/* Center 3D Digital-Twin Viewport */}
@@ -170,6 +179,7 @@ export const App: React.FC = () => {
           scenario={network.scenario}
           disasterPhase={network.disasterPhase}
           onSelectNode={(id) => setSelectedNodeId(id)}
+          onSetMasterNode={handleSetMasterNode}
         />
       </div>
 
